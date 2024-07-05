@@ -49,6 +49,16 @@ impl ComposerModel {
         Ok(Arc::new(ComposerUpdate::from(update)))
     }
 
+    pub fn set_custom_suggestion_patterns(
+        self: &Arc<Self>,
+        custom_suggestion_patterns: Vec<String>,
+    ) {
+        self.inner
+            .lock()
+            .unwrap()
+            .set_custom_suggestion_patterns(custom_suggestion_patterns)
+    }
+
     pub fn get_content_as_html(self: &Arc<Self>) -> String {
         self.inner.lock().unwrap().get_content_as_html().to_string()
     }
@@ -139,11 +149,13 @@ impl ComposerModel {
         self: &Arc<Self>,
         new_text: String,
         suggestion: SuggestionPattern,
+        append_space: bool,
     ) -> Arc<ComposerUpdate> {
         Arc::new(ComposerUpdate::from(
             self.inner.lock().unwrap().replace_text_suggestion(
                 Utf16String::from_str(&new_text),
                 wysiwyg::SuggestionPattern::from(suggestion),
+                append_space,
             ),
         ))
     }

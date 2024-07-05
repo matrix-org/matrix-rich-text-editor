@@ -23,15 +23,22 @@ interface EditorProps {
     initialContent?: string;
     inputEventProcessor?: InputEventProcessor;
     actionsRef?: MutableRefObject<FormattingFunctions | null>;
+    emojiSuggestions?: Map<string, string>;
 }
 
 export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
-    { initialContent, inputEventProcessor, actionsRef }: EditorProps,
+    {
+        initialContent,
+        inputEventProcessor,
+        actionsRef,
+        emojiSuggestions,
+    }: EditorProps,
     forwardRef,
 ) {
     const { ref, isWysiwygReady, wysiwyg, actionStates, content } = useWysiwyg({
         initialContent,
         inputEventProcessor,
+        emojiSuggestions,
     });
 
     if (actionsRef) actionsRef.current = wysiwyg;

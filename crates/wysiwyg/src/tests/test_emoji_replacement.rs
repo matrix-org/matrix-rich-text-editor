@@ -12,17 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::MenuAction;
+use widestring::Utf16String;
 
-use super::testutils_composer_model::{cm, tx};
+use crate::{
+    tests::testutils_composer_model::tx, ComposerModel, MenuAction, PatternKey,
+};
 
 #[test]
-fn test_replace_text_suggestion() {
-    let mut model = cm("|");
-    let update = model.replace_text("/".into());
+fn can_do_plain_text_to_empji_replacement() {
+    let mut model: ComposerModel<Utf16String> = ComposerModel::new();
+    model.set_custom_suggestion_patterns(vec![":)".into()]);
+    let update = model.replace_text("Hey That's great! :)".into());
     let MenuAction::Suggestion(suggestion) = update.menu_action else {
         panic!("No suggestion pattern found")
     };
-    model.replace_text_suggestion("/invite".into(), suggestion, true);
-    assert_eq!(tx(&model), "/invite&nbsp;|");
+    assert_eq!(suggestion.key, PatternKey::Custom(":)".into()),);
+    model.replace_text_suggestion("🙂".into(), suggestion, false);
+
+    assert_eq!(tx(&model), "Hey That's great! 🙂|");
 }

@@ -83,10 +83,12 @@ function App() {
         return e;
     };
 
+    let emojiSuggestions = new Map<string, string>([[':)', '🙂']]);
     const { ref, isWysiwygReady, actionStates, wysiwyg, debug, suggestion } =
         useWysiwyg({
             isAutoFocusEnabled: true,
             inputEventProcessor,
+            emojiSuggestions: emojiSuggestions,
         });
 
     const onEnterToSendChanged = () => {

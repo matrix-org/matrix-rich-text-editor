@@ -54,15 +54,18 @@ export type WysiwygProps = {
     isAutoFocusEnabled?: boolean;
     inputEventProcessor?: InputEventProcessor;
     initialContent?: string;
+    emojiSuggestions?: Map<string, string>;
 };
 
 export function useWysiwyg(wysiwygProps?: WysiwygProps) {
     const ref = useEditor();
     const modelRef = useRef<HTMLDivElement>(null);
 
+    let keys = wysiwygProps?.emojiSuggestions?.keys();
     const { composerModel, onError } = useComposerModel(
         ref,
         wysiwygProps?.initialContent,
+        keys ? Array.from(keys) : undefined,
     );
     const { testRef, utilities: testUtilities } = useTestCases(
         ref,
@@ -80,6 +83,7 @@ export function useWysiwyg(wysiwygProps?: WysiwygProps) {
             formattingFunctions,
             onError,
             wysiwygProps?.inputEventProcessor,
+            wysiwygProps?.emojiSuggestions,
         );
 
     useEditorFocus(ref, wysiwygProps?.isAutoFocusEnabled);

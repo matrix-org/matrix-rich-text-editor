@@ -130,6 +130,25 @@ mod test {
     }
 
     #[test]
+    fn menu_action_is_updated_for_custom_suggestion() {
+        let model = Arc::new(ComposerModel::new());
+        model.set_custom_suggestion_patterns(vec![":)".into()]);
+        let update = model.replace_text("That's great! :)".into());
+
+        assert_eq!(
+            update.menu_action(),
+            MenuAction::Suggestion {
+                suggestion_pattern: SuggestionPattern {
+                    key: crate::PatternKey::Custom(":)".into()),
+                    text: ":)".into(),
+                    start: 14,
+                    end: 16,
+                }
+            },
+        )
+    }
+
+    #[test]
     fn test_replace_whole_suggestion_with_mention_ffi() {
         let mut model = Arc::new(ComposerModel::new());
 
@@ -229,7 +248,7 @@ mod test {
 
     #[test]
     fn test_replace_text_with_escaped_html_in_mention_ffi() {
-        let mut model = Arc::new(ComposerModel::new());
+        let model = Arc::new(ComposerModel::new());
         model.replace_text("hello ".into());
 
         let update = model.replace_text("@alic".into());

@@ -57,6 +57,7 @@ export async function initOnce() {
 export function useComposerModel(
     editorRef: RefObject<HTMLElement | null>,
     initialContent?: string,
+    customSuggestionPatterns?: Array<string>,
 ) {
     const [composerModel, setComposerModel] = useState<ComposerModel | null>(
         null,
@@ -66,6 +67,7 @@ export function useComposerModel(
         async (initialContent?: string) => {
             await initOnce();
 
+            let contentModel: ComposerModel;
             if (initialContent) {
                 try {
                     const newModel = new_composer_model_from_html(
@@ -73,7 +75,7 @@ export function useComposerModel(
                         0,
                         initialContent.length,
                     );
-                    setComposerModel(newModel);
+                    contentModel = newModel;
 
                     if (editorRef.current) {
                         // we need to use the rust model as the source of truth, to allow it to do things
@@ -88,11 +90,17 @@ export function useComposerModel(
                     }
                 } catch (e) {
                     // if the initialisation fails, due to a parsing failure of the html, fallback to an empty composer
-                    setComposerModel(new_composer_model());
+                    contentModel = new_composer_model();
                 }
             } else {
-                setComposerModel(new_composer_model());
+                contentModel = new_composer_model();
             }
+            if (customSuggestionPatterns) {
+                contentModel.set_custom_suggestion_patterns(
+                    customSuggestionPatterns,
+                );
+            }
+            setComposerModel(contentModel);
         },
         [setComposerModel, editorRef],
     );

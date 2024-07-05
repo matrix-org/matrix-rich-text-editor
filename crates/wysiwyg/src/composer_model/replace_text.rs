@@ -49,10 +49,16 @@ where
         &mut self,
         new_text: S,
         suggestion: SuggestionPattern,
+        append_space: bool,
     ) -> ComposerUpdate<S> {
         self.push_state_to_history();
-        self.do_replace_text_in(new_text, suggestion.start, suggestion.end);
-        self.do_replace_text(" ".into())
+        let replace_suggestion_update =
+            self.do_replace_text_in(new_text, suggestion.start, suggestion.end);
+        if append_space {
+            self.do_replace_text(" ".into())
+        } else {
+            replace_suggestion_update
+        }
     }
 
     #[deprecated(since = "0.20.0")]

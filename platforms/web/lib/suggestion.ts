@@ -21,18 +21,26 @@ import { MappedSuggestion, SuggestionChar, SuggestionType } from './types';
 export function getSuggestionChar(
     suggestion: SuggestionPattern,
 ): SuggestionChar {
-    return SUGGESTIONS[suggestion.key] || '';
+    console.log('getSuggestionChar');
+    console.log(suggestion);
+    console.log(suggestion.key);
+    console.log(suggestion.key.key_type);
+    var a = SUGGESTIONS[suggestion.key.key_type] || '';
+    console.log(`a: ${a}`);
+    return a;
 }
 
 export function getSuggestionType(
     suggestion: SuggestionPattern,
 ): SuggestionType {
-    switch (suggestion.key) {
+    switch (suggestion.key.key_type) {
         case 0:
         case 1:
             return 'mention';
         case 2:
             return 'command';
+        case 3:
+            return 'custom';
         default:
             return 'unknown';
     }

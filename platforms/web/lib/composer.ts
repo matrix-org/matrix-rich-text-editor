@@ -51,6 +51,7 @@ export function processInput(
     editor: HTMLElement,
     suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
+    emojiSuggestions?: Map<string, string>,
 ) {
     const event = processEvent(
         e,
@@ -116,6 +117,7 @@ export function processInput(
                     composerModel.replace_text_suggestion(
                         event.data,
                         suggestion,
+                        true,
                     ),
                     'replace_text_suggestion',
                 );
@@ -170,6 +172,11 @@ export function processInput(
             return action(composerModel.ordered_list(), 'ordered_list');
         case 'insertLineBreak':
         case 'insertParagraph':
+            insertAnyEmojiSuggestions(
+                composerModel,
+                suggestion,
+                emojiSuggestions,
+            );
             return action(composerModel.enter(), 'enter');
         case 'insertReplacementText': {
             // Remove br tag
@@ -187,6 +194,13 @@ export function processInput(
         case 'insertFromComposition':
         case 'insertText':
             if (event.data) {
+                if (event.data == ' ') {
+                    insertAnyEmojiSuggestions(
+                        composerModel,
+                        suggestion,
+                        emojiSuggestions,
+                    );
+                }
                 return action(
                     composerModel.replace_text(event.data),
                     'replace_text',
@@ -226,5 +240,23 @@ export function processInput(
             console.error(`Unknown input type: ${event.inputType}`);
             console.error(e);
             return null;
+    }
+
+    function insertAnyEmojiSuggestions(
+        composerModel: ComposerModel,
+        suggestion: SuggestionPattern | null,
+        emojiSuggestions?: Map<string, string>,
+    ) {
+        if (
+            emojiSuggestions &&
+            suggestion &&
+            suggestion.key.key_type == 3 &&
+            suggestion.key.custom_key_value
+        ) {
+            let emoji = emojiSuggestions.get(suggestion.key.custom_key_value);
+            if (emoji) {
+                composerModel.replace_text_suggestion(emoji, suggestion, false);
+            }
+        }
     }
 }

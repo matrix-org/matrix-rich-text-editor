@@ -43,6 +43,7 @@ export function useListeners(
     formattingFunctions: FormattingFunctions,
     onError: (content?: string) => void,
     inputEventProcessor?: InputEventProcessor,
+    emojiSuggestions?: Map<string, string>,
 ) {
     const [state, setState] = useState<State>({
         content: null,
@@ -85,6 +86,7 @@ export function useListeners(
                     formattingFunctions,
                     state.suggestion,
                     inputEventProcessor,
+                    emojiSuggestions,
                 );
 
                 if (res) {

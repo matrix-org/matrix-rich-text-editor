@@ -24,7 +24,7 @@ use crate::{
     ComposerAction, ComposerUpdate, DomHandle, Location, ToHtml, ToMarkdown,
     ToTree,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone, Default)]
 pub struct ComposerModel<S>
@@ -42,6 +42,9 @@ where
 
     /// The states of the buttons for each action e.g. bold, undo
     pub(crate) action_states: HashMap<ComposerAction, ActionState>,
+
+    /// A list of suggestion patterns provided by the client at runtime
+    pub(crate) custom_suggestion_patterns: HashSet<String>,
 }
 
 impl<S> ComposerModel<S>
@@ -54,6 +57,7 @@ where
             previous_states: Vec::new(),
             next_states: Vec::new(),
             action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
+            custom_suggestion_patterns: HashSet::new(),
         };
         instance.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
         instance
@@ -65,6 +69,7 @@ where
             previous_states: Vec::new(),
             next_states: Vec::new(),
             action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
+            custom_suggestion_patterns: HashSet::new(),
         }
     }
 
@@ -85,6 +90,7 @@ where
             previous_states: Vec::new(),
             next_states: Vec::new(),
             action_states: HashMap::new(), // TODO: Calculate state based on ComposerState
+            custom_suggestion_patterns: HashSet::new(),
         };
         model.compute_menu_state(MenuStateComputeType::AlwaysUpdate);
         Self::post_process_dom(&mut model.state.dom);
@@ -123,6 +129,14 @@ where
             .map_err(DomCreationError::MarkdownParseError)?;
 
         self.set_content_from_html(&html)
+    }
+
+    pub fn set_custom_suggestion_patterns(
+        &mut self,
+        custom_suggestion_patterns: Vec<String>,
+    ) {
+        self.custom_suggestion_patterns =
+            HashSet::from_iter(custom_suggestion_patterns)
     }
 
     pub fn action_states(&self) -> &HashMap<ComposerAction, ActionState> {

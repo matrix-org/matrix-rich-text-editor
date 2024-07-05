@@ -25,7 +25,13 @@ import {
 describe('getSuggestionChar', () => {
     it('returns the expected character', () => {
         SUGGESTIONS.forEach((suggestionCharacter, index) => {
-            const suggestion = { key: index } as unknown as SuggestionPattern;
+            const suggestion = {
+                key: { key_type: index },
+            } as unknown as SuggestionPattern;
+            console.log('suggestionCharacter');
+            console.log(suggestion);
+            console.log(getSuggestionChar(suggestion));
+            console.log(suggestionCharacter);
             expect(getSuggestionChar(suggestion)).toBe(suggestionCharacter);
         });
     });
@@ -38,15 +44,21 @@ describe('getSuggestionChar', () => {
 
 describe('getSuggestionType', () => {
     it('returns the expected type for a user or room mention', () => {
-        const userSuggestion = { key: 0 } as unknown as SuggestionPattern;
-        const roomSuggestion = { key: 1 } as unknown as SuggestionPattern;
+        const userSuggestion = {
+            key: { key_type: 0 },
+        } as unknown as SuggestionPattern;
+        const roomSuggestion = {
+            key: { key_type: 1 },
+        } as unknown as SuggestionPattern;
 
         expect(getSuggestionType(userSuggestion)).toBe('mention');
         expect(getSuggestionType(roomSuggestion)).toBe('mention');
     });
 
     it('returns the expected type for a slash command', () => {
-        const slashSuggestion = { key: 2 } as unknown as SuggestionPattern;
+        const slashSuggestion = {
+            key: { key_type: 2 },
+        } as unknown as SuggestionPattern;
 
         expect(getSuggestionType(slashSuggestion)).toBe('command');
     });
@@ -68,7 +80,11 @@ describe('mapSuggestion', () => {
             free: () => {},
             start: 1,
             end: 2,
-            key: 0,
+            key: {
+                free: () => {},
+                key_type: 0,
+                custom_key_value: undefined,
+            },
             text: 'some text',
         };
 
