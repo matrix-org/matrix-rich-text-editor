@@ -1047,7 +1047,7 @@ describe('isPlaceholderParagraphNode', () => {
 
 /* HELPER FUNCTIONS */
 /* The editor always needs an extra BR after your HTML */
-function setEditorHtml(html: string) {
+function setEditorHtml(html: string): void {
     editor.innerHTML = html + '<br />';
 }
 

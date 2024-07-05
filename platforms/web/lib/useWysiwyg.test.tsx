@@ -23,7 +23,7 @@ describe('useWysiwyg', () => {
     describe('Rendering characters', () => {
         let editor: HTMLDivElement;
 
-        function setEditorHtml(html: string) {
+        function setEditorHtml(html: string): void {
             // The editor always needs an extra BR after your HTML
             editor.innerHTML = html + '<br />';
         }
@@ -31,7 +31,7 @@ describe('useWysiwyg', () => {
         beforeEach(async () => {
             render(
                 <Editor
-                    ref={(node) => {
+                    ref={(node): void => {
                         if (node) {
                             editor = node;
                         }

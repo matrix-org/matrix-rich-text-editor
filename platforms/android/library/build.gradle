@@ -1,12 +1,13 @@
 plugins {
-    id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
-
     // Rust
     id 'org.mozilla.rust-android-gradle.rust-android'
 
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+
     alias libs.plugins.jacoco.android
     alias libs.plugins.maven.publish
+    alias libs.plugins.compose.compiler
 }
 
 if (project.hasProperty("coverage")) {
@@ -54,10 +55,6 @@ android {
         compose true // Enable classes to be marked as stable
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion '1.5.3'
-    }
-
     testOptions {
         // Disables animations during instrumented tests you run from the command line…
         // This property does not affect tests that you run using Android Studio.”
@@ -86,7 +83,7 @@ kotlin {
 
 dependencies {
 
-    implementation "net.java.dev.jna:jna:5.13.0@aar"
+    implementation "net.java.dev.jna:jna:5.14.0@aar"
 
     implementation libs.kotlin.coroutines.android
     implementation libs.kotlin.coroutines

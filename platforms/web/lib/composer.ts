@@ -14,7 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { ComposerModel, SuggestionPattern } from '../generated/wysiwyg';
+import {
+    ComposerModel,
+    ComposerUpdate,
+    SuggestionPattern,
+} from '../generated/wysiwyg';
 import {
     WysiwygInputEvent,
     InputEventProcessor,
@@ -52,7 +56,7 @@ export function processInput(
     suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
     emojiSuggestions?: Map<string, string>,
-) {
+): ComposerUpdate | null | undefined {
     const event = processEvent(
         e,
         {

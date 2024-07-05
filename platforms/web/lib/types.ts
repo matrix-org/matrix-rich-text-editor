@@ -29,7 +29,7 @@ export type WysiwygInputEvent =
 
 export type WysiwygEvent = WysiwygInputEvent | KeyboardEvent;
 
-export type ActionTypes = typeof ACTION_TYPES[number];
+export type ActionTypes = (typeof ACTION_TYPES)[number];
 
 export type ActionState = 'enabled' | 'reversed' | 'disabled';
 
@@ -64,8 +64,9 @@ export type InputEventProcessor = (
     editor: HTMLElement,
 ) => WysiwygEvent | null;
 
-export type SuggestionChar = typeof SUGGESTIONS[number] | '';
+export type SuggestionChar = (typeof SUGGESTIONS)[number] | '';
 export type SuggestionType = 'mention' | 'command' | 'custom' | 'unknown';
+
 export type MappedSuggestion = {
     keyChar: SuggestionChar;
     text: string;

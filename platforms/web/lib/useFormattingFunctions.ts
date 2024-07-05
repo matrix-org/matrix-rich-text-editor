@@ -29,7 +29,7 @@ import { ComposerModel } from '../generated/wysiwyg';
 export function useFormattingFunctions(
     editorRef: RefObject<HTMLElement | null>,
     composerModel: ComposerModel | null,
-) {
+): FormattingFunctions {
     const formattingFunctions = useMemo<FormattingFunctions>(() => {
         // The formatting action like inline code doesn't have an input type
         // Safari does not keep the inputType in an input event
@@ -42,14 +42,15 @@ export function useFormattingFunctions(
                 | LinkEvent['data']
                 | SuggestionEvent['data']
                 | AtRoomSuggestionEvent['data'],
-        ) =>
+        ): void => {
             editorRef.current &&
-            sendWysiwygInputEvent(
-                editorRef.current,
-                blockType,
-                undefined,
-                data,
-            );
+                sendWysiwygInputEvent(
+                    editorRef.current,
+                    blockType,
+                    undefined,
+                    data,
+                );
+        };
 
         return {
             bold: () => sendEvent('formatBold'),

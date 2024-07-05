@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { MouseEventHandler, useState } from 'react';
+import { MouseEventHandler, ReactElement, useState } from 'react';
 
 import { useWysiwyg } from '../lib/useWysiwyg';
 import boldImage from './images/bold.svg';
@@ -39,7 +39,7 @@ type ButtonProps = {
     state: 'enabled' | 'disabled' | 'reversed';
 };
 
-function Button({ onClick, imagePath, alt, state }: ButtonProps) {
+function Button({ onClick, imagePath, alt, state }: ButtonProps): ReactElement {
     const isReversed = state === 'reversed';
     const isDisabled = state === 'disabled';
     return (
@@ -56,7 +56,7 @@ function Button({ onClick, imagePath, alt, state }: ButtonProps) {
     );
 }
 
-function App() {
+function App(): ReactElement {
     const [enterToSend, setEnterToSend] = useState(true);
 
     const inputEventProcessor = (
@@ -91,7 +91,7 @@ function App() {
             emojiSuggestions: emojiSuggestions,
         });
 
-    const onEnterToSendChanged = () => {
+    const onEnterToSendChanged = (): void => {
         setEnterToSend((prevValue) => !prevValue);
     };
 
@@ -191,14 +191,17 @@ function App() {
                             imagePath={codeBlockImage}
                             state={actionStates.codeBlock}
                         />
-                        <button type="button" onClick={(_e) => wysiwyg.clear()}>
+                        <button
+                            type="button"
+                            onClick={(_e): void => wysiwyg.clear()}
+                        >
                             clear
                         </button>
                         {shouldDisplayAtMention && (
                             <>
                                 <button
                                     type="button"
-                                    onClick={(_e) =>
+                                    onClick={(_e): void =>
                                         wysiwyg.mention(
                                             'https://matrix.to/#/@alice_user:element.io',
                                             'Alice',
@@ -216,7 +219,7 @@ function App() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={(_e) =>
+                                    onClick={(_e): void =>
                                         wysiwyg.mentionAtRoom(
                                             new Map([
                                                 [
@@ -234,7 +237,7 @@ function App() {
                         {shouldDisplayHashMention && (
                             <button
                                 type="button"
-                                onClick={(_e) =>
+                                onClick={(_e): void =>
                                     wysiwyg.mention(
                                         'https://matrix.to/#/#my_room:element.io',
                                         'My room',
@@ -253,7 +256,9 @@ function App() {
                         {commandExists && (
                             <button
                                 type="button"
-                                onClick={(_e) => wysiwyg.command('/spoiler')}
+                                onClick={(_e): void =>
+                                    wysiwyg.command('/spoiler')
+                                }
                             >
                                 Add /spoiler command
                             </button>

@@ -32,14 +32,14 @@ let initFinished = false;
 /**
  * Initialise the WASM module, or do nothing if it is already initialised.
  */
-export async function initOnce() {
+export async function initOnce(): Promise<void> {
     if (initFinished) {
         return Promise.resolve();
     }
     if (initStarted) {
         // Wait until the other init call has finished
         return new Promise<void>((resolve) => {
-            function tryResolve() {
+            function tryResolve(): void {
                 if (initFinished) {
                     resolve();
                 }
@@ -58,7 +58,10 @@ export function useComposerModel(
     editorRef: RefObject<HTMLElement | null>,
     initialContent?: string,
     customSuggestionPatterns?: Array<string>,
-) {
+): {
+    composerModel: ComposerModel | null;
+    onError: (initialContent?: string) => Promise<void>;
+} {
     const [composerModel, setComposerModel] = useState<ComposerModel | null>(
         null,
     );

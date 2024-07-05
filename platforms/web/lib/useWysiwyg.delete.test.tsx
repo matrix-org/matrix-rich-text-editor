@@ -33,7 +33,7 @@ describe('delete content', () => {
         clearButton = screen.getByRole('button', { name: 'clear' });
     });
 
-    async function fillContent() {
+    async function fillContent(): Promise<void> {
         fireEvent.input(textbox, {
             data: 'foo',
             inputType: 'insertText',
