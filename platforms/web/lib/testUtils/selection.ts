@@ -20,7 +20,7 @@ export function select(
     editor: HTMLDivElement,
     startIndex: number,
     endIndex: number,
-) {
+): void {
     selectContent(editor, startIndex, endIndex);
 
     // the event is not automatically fired in jest
@@ -31,7 +31,7 @@ export function deleteRange(
     editor: HTMLDivElement,
     start: number,
     end: number,
-) {
+): void {
     select(editor, start, end);
     const sel = document.getSelection();
     sel?.deleteFromDocument();

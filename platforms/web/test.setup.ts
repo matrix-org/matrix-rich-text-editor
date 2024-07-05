@@ -23,7 +23,7 @@ import { cleanup } from '@testing-library/react';
 import fs from 'node:fs/promises';
 import path from 'path';
 
-globalThis.fetch = (url) => {
+globalThis.fetch = (url): Promise<Buffer> => {
     // wysiwyg.js binding uses fetch to get the wasm file
     // we return manually here the wasm file
     if (url instanceof URL && url.href.includes('wysiwyg_bg.wasm')) {

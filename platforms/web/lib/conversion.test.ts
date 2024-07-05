@@ -108,7 +108,7 @@ describe('Rich text <=> plain text', () => {
 
 describe('markdownToPlain', () => {
     it('converts single linebreak for markdown => plain', () => {
-        const markdown = 'multi\\\nline';
+        const markdown = 'multi\nline';
         const convertedPlainText = markdownToPlain(markdown);
         const expectedPlainText = 'multi\nline';
 
@@ -116,7 +116,7 @@ describe('markdownToPlain', () => {
     });
 
     it('converts multiple linebreak for markdown => plain', () => {
-        const markdown = 'multiple\\\nline\\\n\\\nbreaks\\\n\\\n\\\n';
+        const markdown = 'multiple\nline\n\nbreaks\n\n\n';
         const convertedPlainText = markdownToPlain(markdown);
         const expectedPlainText = 'multiple\nline\n\nbreaks\n\n';
 
@@ -148,7 +148,7 @@ describe('Mentions', () => {
             const asComposerHtml = await plainToRich(input, false);
 
             expect(asComposerHtml).toMatchInlineSnapshot(
-                '"<a style=\\"some styling\\" data-mention-type=\\"user\\" href=\\"https://matrix.to/#/@test_user:element.io\\" contenteditable=\\"false\\">a test user</a>"',
+                '"<a style="some styling" data-mention-type="user" href="https://matrix.to/#/@test_user:element.io" contenteditable="false">a test user</a>"',
             );
         });
 
@@ -158,7 +158,7 @@ describe('Mentions', () => {
             const asMessageHtml = await plainToRich(input, true);
 
             expect(asMessageHtml).toMatchInlineSnapshot(
-                '"<a href=\\"https://matrix.to/#/@test_user:element.io\\">a test user</a>"',
+                '"<a href="https://matrix.to/#/@test_user:element.io">a test user</a>"',
             );
         });
 
@@ -169,7 +169,7 @@ describe('Mentions', () => {
 
             // note inner text is the same as the input inner text
             expect(asComposerHtml).toMatchInlineSnapshot(
-                '"<a style=\\"some styling\\" data-mention-type=\\"room\\" href=\\"https://matrix.to/#/#test_room:element.io\\" contenteditable=\\"false\\">a test user</a>"',
+                '"<a style="some styling" data-mention-type="room" href="https://matrix.to/#/#test_room:element.io" contenteditable="false">a test user</a>"',
             );
         });
 
@@ -180,7 +180,7 @@ describe('Mentions', () => {
 
             // note inner text is the mx id
             expect(asMessageHtml).toMatchInlineSnapshot(
-                '"<a href=\\"https://matrix.to/#/#test_room:element.io\\">#test_room:element.io</a>"',
+                '"<a href="https://matrix.to/#/#test_room:element.io">#test_room:element.io</a>"',
             );
         });
     });
@@ -191,7 +191,7 @@ describe('Mentions', () => {
             const asComposerMarkdown = await richToPlain(input, false);
 
             expect(asComposerMarkdown).toMatchInlineSnapshot(
-                '"<a data-mention-type=\\"at-room\\" href=\\"#\\" contenteditable=\\"false\\">@room</a>"',
+                '"<a data-mention-type="at-room" href="#" contenteditable="false">@room</a>"',
             );
         });
 
@@ -208,7 +208,7 @@ describe('Mentions', () => {
             const asComposerMarkdown = await richToPlain(input, false);
 
             expect(asComposerMarkdown).toMatchInlineSnapshot(
-                '"<a data-mention-type=\\"user\\" href=\\"https://matrix.to/#/@test_user:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+                '"<a data-mention-type="user" href="https://matrix.to/#/@test_user:element.io" contenteditable="false">a test user</a> "',
             );
         });
 
@@ -226,7 +226,7 @@ describe('Mentions', () => {
             const asComposerMarkdown = await richToPlain(input, false);
 
             expect(asComposerMarkdown).toMatchInlineSnapshot(
-                '"<a data-mention-type=\\"room\\" href=\\"https://matrix.to/#/#test_room:element.io\\" contenteditable=\\"false\\">a test user</a> "',
+                '"<a data-mention-type="room" href="https://matrix.to/#/#test_room:element.io" contenteditable="false">a test user</a> "',
             );
         });
 

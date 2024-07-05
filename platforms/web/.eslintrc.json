@@ -6,6 +6,9 @@
         "plugin:matrix-org/a11y",
         "prettier"
     ],
+    "parserOptions": {
+        "project": ["./tsconfig.json"]
+    },
     "env": {
         "browser": true,
         "node": true

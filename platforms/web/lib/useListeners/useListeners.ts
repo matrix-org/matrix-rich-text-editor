@@ -43,7 +43,12 @@ export function useListeners(
     formattingFunctions: FormattingFunctions,
     onError: (content?: string) => void,
     inputEventProcessor?: InputEventProcessor,
-) {
+): {
+    areListenersReady: boolean;
+    content: string | null;
+    actionStates: AllActionStates;
+    suggestion: SuggestionPattern | null;
+} {
     const [state, setState] = useState<State>({
         content: null,
         actionStates: createDefaultActionStates(),
@@ -74,7 +79,7 @@ export function useListeners(
             return;
         }
 
-        const _handleInput = (e: WysiwygInputEvent) => {
+        const _handleInput = (e: WysiwygInputEvent): void => {
             try {
                 const res = handleInput(
                     e,
@@ -121,12 +126,16 @@ export function useListeners(
         // doesn't catch manually fired event (myNode.dispatchEvent)
 
         // Also skip this if we are composing IME such as inputting accents or CJK
-        const onInput = (e: Event) =>
-            isInputEvent(e) && !e.isComposing && _handleInput(e);
+        const onInput = (e: Event): void => {
+            if (isInputEvent(e) && !e.isComposing) {
+                _handleInput(e);
+            }
+        };
+
         editorNode.addEventListener('input', onInput);
 
         // Can be called by onPaste or onBeforeInput
-        const onPaste = (e: ClipboardEvent | InputEvent) => {
+        const onPaste = (e: ClipboardEvent | InputEvent): void => {
             // this is required to handle edge case image pasting in Safari, see
             // https://github.com/vector-im/element-web/issues/25327
             const isSpecialCaseInputEvent =
@@ -154,7 +163,7 @@ export function useListeners(
         }) as EventListener;
         editorNode.addEventListener('wysiwygInput', onWysiwygInput);
 
-        const onKeyDown = (e: KeyboardEvent) => {
+        const onKeyDown = (e: KeyboardEvent): void => {
             handleKeyDown(
                 e,
                 editorNode,
@@ -165,7 +174,7 @@ export function useListeners(
         };
         editorNode.addEventListener('keydown', onKeyDown);
 
-        const onSelectionChange = () => {
+        const onSelectionChange = (): void => {
             try {
                 const actionStates = handleSelectionChange(
                     editorNode,
@@ -190,7 +199,7 @@ export function useListeners(
 
         // this is required to handle edge case image pasting in Safari, see
         // https://github.com/vector-im/element-web/issues/25327
-        const onBeforeInput = (e: ClipboardEvent | InputEvent) => {
+        const onBeforeInput = (e: ClipboardEvent | InputEvent): void => {
             if (isInputEvent(e) && e.isComposing) return;
             return onPaste(e);
         };

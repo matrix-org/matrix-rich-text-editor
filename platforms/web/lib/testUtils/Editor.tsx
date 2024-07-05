@@ -28,7 +28,7 @@ interface EditorProps {
 export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
     { initialContent, inputEventProcessor, actionsRef }: EditorProps,
     forwardRef,
-) {
+): JSX.Element {
     const { ref, isWysiwygReady, wysiwyg, actionStates, content } = useWysiwyg({
         initialContent,
         inputEventProcessor,
@@ -71,7 +71,7 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
                 <button
                     key={key}
                     type="button"
-                    onClick={() => wysiwyg[key]()}
+                    onClick={(): void => wysiwyg[key]()}
                     data-state={actionStates[key]}
                 >
                     {key}
@@ -97,28 +97,30 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             )}
             <button
                 type="button"
-                onClick={() => wysiwyg.insertText('add new words')}
+                onClick={(): void => wysiwyg.insertText('add new words')}
             >
                 insertText
             </button>
             <button
                 type="button"
-                onClick={() => wysiwyg.link('https://mylink.com')}
+                onClick={(): void => wysiwyg.link('https://mylink.com')}
             >
                 link
             </button>
             <button
                 type="button"
-                onClick={() => wysiwyg.link('https://mylink.com', 'my text')}
+                onClick={(): void =>
+                    wysiwyg.link('https://mylink.com', 'my text')
+                }
             >
                 link with text
             </button>
-            <button type="button" onClick={() => wysiwyg.removeLinks()}>
+            <button type="button" onClick={(): void => wysiwyg.removeLinks()}>
                 remove links
             </button>
             <button
                 type="button"
-                onClick={() => {
+                onClick={(): void => {
                     wysiwyg.mention(
                         'https://matrix.to/#/@test_user:element.io',
                         'test user',
@@ -130,14 +132,14 @@ export const Editor = forwardRef<HTMLDivElement, EditorProps>(function Editor(
             </button>
             <button
                 type="button"
-                onClick={() => {
+                onClick={(): void => {
                     wysiwyg.command('/test_command');
                 }}
             >
                 add command
             </button>
             <div
-                ref={(node) => {
+                ref={(node): void => {
                     if (node) {
                         ref.current = node;
                         if (typeof forwardRef === 'function') forwardRef(node);

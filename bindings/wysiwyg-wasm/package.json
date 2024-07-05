@@ -26,9 +26,9 @@
     "pkg/wysiwyg.d.ts"
   ],
   "devDependencies": {
-    "wasm-pack": "^0.10.2",
+    "wasm-pack": "^0.13.0",
     "jest": "^28.1.0",
-    "typedoc": "^0.22.17"
+    "typedoc": "^0.26.0"
   },
   "engines": {
     "node": ">= 10"

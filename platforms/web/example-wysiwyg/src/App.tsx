@@ -18,7 +18,7 @@ import { useWysiwyg } from '@matrix-org/matrix-wysiwyg';
 
 import './App.css';
 
-function App() {
+function App(): React.ReactElement {
     const { ref, isWysiwygReady, wysiwyg } = useWysiwyg({
         isAutoFocusEnabled: true,
     });

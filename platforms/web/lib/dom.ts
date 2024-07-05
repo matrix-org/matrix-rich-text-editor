@@ -19,7 +19,7 @@ import { ComposerModel, DomHandle } from '../generated/wysiwyg';
 export function refreshComposerView(
     node: HTMLElement,
     composerModel: ComposerModel,
-) {
+): void {
     node.innerHTML = '';
     const doc = composerModel.document();
     let idCounter = 0;
@@ -30,7 +30,7 @@ export function refreshComposerView(
         name: string,
         text?: string | null,
         attrs?: Map<string, string | null>,
-    ) {
+    ): HTMLElement {
         const tag = document.createElement(name);
         if (text) {
             tag.innerText = text.replace('\u200b', '~');
@@ -48,7 +48,7 @@ export function refreshComposerView(
         return tag;
     }
 
-    function writeChildren(node: DomHandle, html: HTMLElement) {
+    function writeChildren(node: DomHandle, html: HTMLElement): void {
         const list = createNode(html, 'ul');
         list.className = `group_${idCounter % 10}`;
         const children = node.children(composerModel);
@@ -107,7 +107,7 @@ export function selectContent(
     editor: HTMLElement,
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
-) {
+): void {
     const range = document.createRange();
 
     let start = computeNodeAndOffset(editor, startUtf16Codeunit);
@@ -147,7 +147,7 @@ export function replaceEditor(
     htmlContent: string,
     startUtf16Codeunit: number,
     endUtf16Codeunit: number,
-) {
+): void {
     editor.innerHTML = htmlContent + '<br />';
     selectContent(editor, startUtf16Codeunit, endUtf16Codeunit);
 }
@@ -316,7 +316,7 @@ export function computeNodeAndOffset(
 export function getCurrentSelection(
     editor: HTMLElement,
     selection: Selection | null,
-) {
+): number[] {
     // return [0,0] when selection is null, or we have an empty editor
     const editorIsEmpty =
         editor.childNodes.length === 1 && editor.firstChild?.nodeName === 'BR';
@@ -536,7 +536,7 @@ export function countCodeunit(
  * Returns a boolean, true if the node needs an extra offset
  */
 
-export function textNodeNeedsExtraOffset(node: Node | null) {
+export function textNodeNeedsExtraOffset(node: Node | null): boolean {
     if (node === null) return false;
 
     let checkNode: Node | ParentNode | null = node;
@@ -579,7 +579,7 @@ export function textNodeNeedsExtraOffset(node: Node | null) {
 const INLINE_NODE_NAMES = ['EM', 'U', 'STRONG', 'DEL', 'CODE', 'A'];
 const EXTRA_OFFSET_NODE_NAMES = ['OL', 'UL', 'LI', 'PRE', 'BLOCKQUOTE', 'P'];
 
-function isInlineNode(node: Node | ParentNode | null) {
+function isInlineNode(node: Node | ParentNode | null): boolean {
     if (node === null) return false;
     return INLINE_NODE_NAMES.includes(node.nodeName || '');
 }
@@ -590,18 +590,18 @@ function isInlineNode(node: Node | ParentNode | null) {
 // list item, the enclosing list type tag does not add an extra offset.
 // We need the enclosing list tags in the array as we also use this check on
 // sibling nodes.
-function isNodeRequiringExtraOffset(node: Node) {
+function isNodeRequiringExtraOffset(node: Node): boolean {
     return EXTRA_OFFSET_NODE_NAMES.includes(node.nodeName || '');
 }
 
-function isEmptyInlineNode(node: Node) {
+function isEmptyInlineNode(node: Node): boolean {
     return (
         INLINE_NODE_NAMES.includes(node.nodeName) &&
         node.textContent?.length === 0
     );
 }
 
-export function isPlaceholderParagraphNode(node: Node) {
+export function isPlaceholderParagraphNode(node: Node): boolean {
     // a placeholder paragraph will have single child that is a text node with
     // a content that is an nbsp
     const hasNoSiblings = node.parentNode?.childNodes.length === 1;

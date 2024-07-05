@@ -34,7 +34,11 @@ const getSelection = (): Chainable<string> => {
     return cy.window().then((win) => win.navigator.clipboard.readText());
 };
 
-const setSelection = (selector: string, start: number, end: number) => {
+const setSelection = (
+    selector: string,
+    start: number,
+    end: number,
+): Chainable<string> => {
     // eslint-disable-next-line max-len
     // From https://github.com/cypress-io/cypress/issues/2839#issuecomment-447012818
     cy.get(selector)
