@@ -149,7 +149,7 @@ describe('useWysiwyg', () => {
     test('Typing plain text converts to emoji', async () => {
         const emojiSuggestions = new Map<string, string>([[':)', '🙂']]);
         render(
-            <Editor initialContent={``} emojiSuggestions={emojiSuggestions} />,
+            <Editor initialContent="" emojiSuggestions={emojiSuggestions} />,
         );
 
         const textbox = screen.getByRole('textbox');
