@@ -1,3 +1,4 @@
+use crate::dom::nodes::dom_node::DomNodeKind;
 use crate::dom::nodes::dom_node::DomNodeKind::{
     Generic, Link, List, ListItem, Paragraph,
 };
@@ -72,7 +73,7 @@ where
 
         let first_leaf = range.leaves().next();
         match block_location.kind {
-            Paragraph => {
+            Paragraph | DomNodeKind::Quote => {
                 let ancestor_block_location =
                     range.deepest_block_node(Some(&block_handle));
                 if let Some(ancestor_block_location) = ancestor_block_location {

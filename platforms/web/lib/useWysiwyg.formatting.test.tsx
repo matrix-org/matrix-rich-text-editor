@@ -249,7 +249,7 @@ describe('link', () => {
     async function renderEditor(
         initialContent?: string,
         ref?: MutableRefObject<FormattingFunctions | null>,
-    ) {
+    ): Promise<HTMLDivElement> {
         render(<Editor initialContent={initialContent} actionsRef={ref} />);
         const textbox: HTMLDivElement = screen.getByRole('textbox');
         await waitFor(() =>

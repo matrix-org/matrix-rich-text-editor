@@ -28,7 +28,7 @@ const NEWLINE_CHAR = '\n';
 // If we have a trailing newline character, we trim it off so that the cursor
 // will always be at the last character of the string, not on a new line in the
 // composer.
-export const markdownToPlain = (markdown: string) => {
+export const markdownToPlain = (markdown: string): string => {
     let plainText = markdown;
     if (plainText.endsWith(NEWLINE_CHAR)) {
         plainText = plainText.slice(0, -1);
@@ -36,7 +36,10 @@ export const markdownToPlain = (markdown: string) => {
     return plainText.replaceAll(/\\/g, '');
 };
 
-export async function richToPlain(richText: string, inMessageFormat: boolean) {
+export async function richToPlain(
+    richText: string,
+    inMessageFormat: boolean,
+): Promise<string> {
     if (richText.length === 0) {
         return '';
     }
@@ -59,7 +62,10 @@ export async function richToPlain(richText: string, inMessageFormat: boolean) {
     return plainText;
 }
 
-export async function plainToRich(plainText: string, inMessageFormat: boolean) {
+export async function plainToRich(
+    plainText: string,
+    inMessageFormat: boolean,
+): Promise<string> {
     if (plainText.length === 0) {
         return '';
     }

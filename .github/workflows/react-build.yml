@@ -23,13 +23,13 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Rust & Cargo cache
         uses: Swatinem/rust-cache@v2
       - name: Build
         run: make web
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "yarn"
@@ -52,7 +52,7 @@ jobs:
           # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: |

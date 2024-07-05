@@ -24,12 +24,13 @@ import {
 import { getCurrentSelection } from '../dom';
 import { isSelectTuple } from './assert';
 import { Actions } from './types';
+import { TraceAction } from './useTestCases';
 
 export function traceAction(
     testNode: HTMLElement | null,
     actions: Actions,
     composerModel: ComposerModel | null,
-) {
+): TraceAction {
     return (
         update: ComposerUpdate | null,
         name: string,
@@ -73,7 +74,7 @@ function updateTestCase(
     composerModel: ComposerModel,
     update: ComposerUpdate | null,
     actions: Actions,
-) {
+): void {
     // let html = editor.innerHTML;
     if (update) {
         // TODO: if (replacement_html !== html) SHOW AN ERROR?
@@ -90,14 +91,14 @@ function updateTestCase(
     testNode.scrollTo(0, testNode.scrollHeight - testNode.clientHeight);
 }
 
-export function generateTestCase(actions: Actions, html: string) {
+export function generateTestCase(actions: Actions, html: string): string {
     let ret = '';
 
     function add(
         name: string,
         value1?: string | number,
         value2?: string | number,
-    ) {
+    ): void {
         if (name === 'select') {
             ret +=
                 'model.select(' +
@@ -114,7 +115,7 @@ export function generateTestCase(actions: Actions, html: string) {
         }
     }
 
-    function start() {
+    function start(): void {
         const text = addSelection(collected, selection[0], selection[1]);
         ret += `let mut model = cm("${text}");\n`;
     }
@@ -156,7 +157,7 @@ export function generateTestCase(actions: Actions, html: string) {
     return ret;
 }
 
-function addSelection(text: string, start: number, end: number) {
+function addSelection(text: string, start: number, end: number): string {
     // In the original wysiwyg js, the function is called with one parameter but
     // the TS definition requires 3 params
     // new_composer_model_from_html(text)
@@ -170,7 +171,7 @@ export function resetTestCase(
     testNode: HTMLElement,
     composerModel: ComposerModel,
     html: string,
-) {
+): Actions {
     const [start, end] = getCurrentSelection(editor, document.getSelection());
     const actions: Actions = [
         ['replace_text', html],

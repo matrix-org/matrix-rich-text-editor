@@ -30,11 +30,11 @@ jobs:
       matrix:
         api-level: [31]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -48,7 +48,7 @@ jobs:
         run: make targets-android
 
       - name: Setup Gradle & Build test cases
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/gradle-build-action@v3
         env:
           ANDROID_NDK_TOOLCHAIN_DIR: ${{ env.ANDROID_NDK_HOME }}/toolchains
         with:
@@ -79,7 +79,7 @@ jobs:
 
       - name : Upload test results
         if : ${{ always() }}
-        uses : actions/upload-artifact@v3
+        uses : actions/upload-artifact@v4
         with :
           name : android-test-results-${{ matrix.api-level }}
           path : |

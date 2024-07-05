@@ -227,6 +227,30 @@ mod test {
         )
     }
 
+    #[test]
+    fn test_replace_text_with_escaped_html_in_mention_ffi() {
+        let mut model = Arc::new(ComposerModel::new());
+        model.replace_text("hello ".into());
+
+        let update = model.replace_text("@alic".into());
+        let MenuAction::Suggestion { suggestion_pattern } =
+            update.menu_action()
+        else {
+            panic!("No suggestion pattern found")
+        };
+        model.insert_mention_at_suggestion(
+            "https://matrix.to/#/@alice:matrix.org".into(),
+            ":D</a> a broken mention!".into(),
+            suggestion_pattern,
+            vec![], // TODO remove argument when function signature changes
+        );
+
+        assert_eq!(
+            model.get_content_as_html(),
+            "hello <a data-mention-type=\"user\" href=\"https://matrix.to/#/@alice:matrix.org\" contenteditable=\"false\">:D&lt;&#x2F;a&gt; a broken mention!</a>\u{a0}",
+        )
+    }
+
     // TODO remove attributes when Rust model can parse url directly
     // https://github.com/matrix-org/matrix-rich-text-editor/issues/709
     fn insert_mention_at_cursor(model: &mut Arc<ComposerModel>) {
