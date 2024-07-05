@@ -146,6 +146,28 @@ describe('useWysiwyg', () => {
         expect(mention).toHaveAttribute('style', testStyle);
     });
 
+    test('Typing plain text converts to emoji', async () => {
+        const emojiSuggestions = new Map<string, string>([[':)', '🙂']]);
+        render(
+            <Editor initialContent={``} emojiSuggestions={emojiSuggestions} />,
+        );
+
+        const textbox = screen.getByRole('textbox');
+        await waitFor(() =>
+            expect(textbox).toHaveAttribute('contentEditable', 'true'),
+        );
+        fireEvent.input(textbox, {
+            data: 'test :)',
+            inputType: 'insertText',
+        });
+        fireEvent.input(textbox, {
+            data: ' ',
+            inputType: 'insertText',
+        });
+
+        await expect(textbox).toHaveTextContent('test 🙂');
+    });
+
     test('Create wysiwyg with initial content', async () => {
         // Given
         const content = 'fo<strong>o</strong><br />b<em>ar</em>';
