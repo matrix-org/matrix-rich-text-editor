@@ -105,7 +105,7 @@ export function useComposerModel(
             }
             setComposerModel(contentModel);
         },
-        [setComposerModel, editorRef],
+        [setComposerModel, editorRef, customSuggestionPatterns],
     );
 
     useEffect(() => {

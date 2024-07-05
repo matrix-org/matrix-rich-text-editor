@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject, useEffect, useMemo, useRef } from 'react';
+import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
     AllActionStates,
@@ -79,15 +79,25 @@ export type UseWysiwyg = {
     messageContent: string | null;
 };
 
+function getEmojiKeys(emojiSuggestions?: Map<string, string>): string[] {
+    const keys = emojiSuggestions?.keys();
+    return keys ? Array.from(keys) : [];
+}
+
 export function useWysiwyg(wysiwygProps?: WysiwygProps): UseWysiwyg {
     const ref = useEditor();
     const modelRef = useRef<HTMLDivElement>(null);
+    const [emojiKeys, setEmojiKeys] = useState(
+        getEmojiKeys(wysiwygProps?.emojiSuggestions),
+    );
+    useEffect(() => {
+        setEmojiKeys(getEmojiKeys(wysiwygProps?.emojiSuggestions));
+    }, [wysiwygProps?.emojiSuggestions]);
 
-    let keys = wysiwygProps?.emojiSuggestions?.keys();
     const { composerModel, onError } = useComposerModel(
         ref,
         wysiwygProps?.initialContent,
-        keys ? Array.from(keys) : undefined,
+        emojiKeys,
     );
     const { testRef, utilities: testUtilities } = useTestCases(
         ref,

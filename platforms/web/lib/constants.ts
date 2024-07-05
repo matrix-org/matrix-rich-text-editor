@@ -32,4 +32,4 @@ export const ACTION_TYPES = [
     'unindent',
 ] as const;
 
-export const SUGGESTIONS = ['@', '#', '/'] as const;
+export const SUGGESTIONS = ['@', '#', '/', ''] as const;

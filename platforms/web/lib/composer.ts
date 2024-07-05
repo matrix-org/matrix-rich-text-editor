@@ -250,14 +250,14 @@ export function processInput(
         composerModel: ComposerModel,
         suggestion: SuggestionPattern | null,
         emojiSuggestions?: Map<string, string>,
-    ) {
+    ): void {
         if (
             emojiSuggestions &&
             suggestion &&
             suggestion.key.key_type == 3 &&
             suggestion.key.custom_key_value
         ) {
-            let emoji = emojiSuggestions.get(suggestion.key.custom_key_value);
+            const emoji = emojiSuggestions.get(suggestion.key.custom_key_value);
             if (emoji) {
                 composerModel.replace_text_suggestion(emoji, suggestion, false);
             }

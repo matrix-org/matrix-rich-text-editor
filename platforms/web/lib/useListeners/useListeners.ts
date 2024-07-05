@@ -233,6 +233,7 @@ export function useListeners(
         };
     }, [
         editorRef,
+        emojiSuggestions,
         composerModel,
         formattingFunctions,
         modelRef,
