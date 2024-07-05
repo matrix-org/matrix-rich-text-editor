@@ -43,7 +43,7 @@ where
     /// The states of the buttons for each action e.g. bold, undo
     pub(crate) action_states: HashMap<ComposerAction, ActionState>,
 
-    /// A list of suggestion patterns provided by the client at runtime
+    /// Suggestion patterns provided by the client at runtime
     pub(crate) custom_suggestion_patterns: HashSet<String>,
 }
 

@@ -28,10 +28,6 @@ describe('getSuggestionChar', () => {
             const suggestion = {
                 key: { key_type: index },
             } as unknown as SuggestionPattern;
-            console.log('suggestionCharacter');
-            console.log(suggestion);
-            console.log(getSuggestionChar(suggestion));
-            console.log(suggestionCharacter);
             expect(getSuggestionChar(suggestion)).toBe(suggestionCharacter);
         });
     });
