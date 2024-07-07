@@ -206,11 +206,11 @@ final class WysiwygComposerViewModelTests: XCTestCase {
     func testPendingFormatFlagAfterReselectingListItem() {
         viewModel.apply(.bold)
         viewModel.apply(.italic)
-        mockTrailingTyping("Text")
+        mockTrailingTyping("Text1")
         viewModel.enter()
         viewModel.apply(.orderedList)
         let inListSelection = viewModel.attributedContent.selection
-        let insertedText = "Text"
+        let insertedText = "Text2"
         mockTyping(insertedText, at: 0)
         // After re-selecting the empty list item, pending format flag is still on
         viewModel.select(range: NSRange(location: inListSelection.location + insertedText.utf16Length,
