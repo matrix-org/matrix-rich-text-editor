@@ -1,5 +1,9 @@
 # Changelog
 
+# [2.37.5] - 2024-06-20
+- [Rust] Fixed a crash that happened when entering a new line after setting through html a blockquote containing a single line.
+- [Common] Updated dependencies.
+
 # [2.37.4] - 2024-06-20
 - [Android] Make `CustomMentionSpan` public.
 - [Rust] Escape text passed to `ComposerModel::set_link_with_text` and `insert_mention*` methods.
