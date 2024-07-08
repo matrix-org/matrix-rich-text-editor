@@ -136,7 +136,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
 
     private(set) var hasPendingFormats = false
     
-    /// This is used as the source of truth of text commited to the editor, as opposed to text
+    /// This is used to track the text commited to the editor by the user, as opposed to text
     /// that could be in the editor that is not yet committed (e.g. from inline predictive text or dictation ).
     private lazy var committedAttributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
     
@@ -240,7 +240,7 @@ public extension WysiwygComposerViewModel {
     /// Clear the content of the composer.
     func clearContent() {
         if plainTextMode {
-            committedAttributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
+            textView.attributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
             updateCompressedHeightIfNeeded()
         } else {
             applyUpdate(model.clear())
