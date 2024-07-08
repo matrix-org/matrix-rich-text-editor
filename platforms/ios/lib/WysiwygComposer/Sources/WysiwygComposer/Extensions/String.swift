@@ -26,4 +26,8 @@ extension String {
     var withNBSP: String {
         String(map { $0.isWhitespace ? Character.nbsp : $0 })
     }
+    
+    var containsLatinAndCommonCharactersOnly: Bool {
+        range(of: "[^\\p{Latin}\\p{Common}]", options: .regularExpression) == nil
+    }
 }

@@ -659,7 +659,7 @@ private extension WysiwygComposerViewModel {
             
             // Don't use reconciliate if the replacement is only latin character languages
             // as it shouldn't be needed. It is needed for CJK lanuages like Japanese Kana.
-            if replacement.text.containsLatinAndWhitespaceCharactersOnly {
+            if replacement.text.containsLatinAndCommonCharactersOnly {
                 return
             }
             
@@ -734,12 +734,6 @@ private extension WysiwygComposerViewModel {
             hasPendingFormats = true
         }
         return update
-    }
-}
-
-private extension String {
-    var containsLatinAndWhitespaceCharactersOnly: Bool {
-        range(of: "[^\\s\\p{Latin}]", options: .regularExpression) == nil
     }
 }
 
