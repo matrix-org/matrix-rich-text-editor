@@ -21,17 +21,15 @@ extension WysiwygUITests {
         sleep(3)
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
-        app.typeTextCharByCharUsingKeyboard("hello how")
+        app.typeTextCharByCharUsingKeyboard("hello how a")
         // We assert both the tree and textview content because the text view is containing the predictive text at that moment
         // Which in the ui test is seen as part of the static text
         assertTextViewContent("hello how are you")
         assertTreeEquals(
             """
-            └>"hello how"
+            └>"hello how a"
             """
         )
-        app.keys["space"].tap()
-        sleep(1)
         app.keys["space"].tap()
         assertTextViewContent("hello how are you ")
         assertTreeEquals(
