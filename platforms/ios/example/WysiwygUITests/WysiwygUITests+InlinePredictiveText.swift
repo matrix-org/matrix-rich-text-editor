@@ -22,10 +22,23 @@ extension WysiwygUITests {
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
+        // We assert both the tree content because the text view is containing the predictive text at that moment
+        // Which in the ui test is seen as part of the static text
+        assertTextViewContent("hello how are you")
+        assertTreeEquals(
+            """
+            └>"hello how"
+            """
+        )
         app.keys["space"].tap()
         sleep(1)
         app.keys["space"].tap()
         assertTextViewContent("hello how are you ")
+        assertTreeEquals(
+            """
+            └>"hello how are you "
+            """
+        )
     }
     
     func testInlinePredictiveTextIsIgnoredWhenSending() {
@@ -33,6 +46,14 @@ extension WysiwygUITests {
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
+        // We assert both the tree content because the text view is containing the predictive text at that moment
+        // Which in the ui test is seen as part of the static text
+        assertTextViewContent("hello how are you")
+        assertTreeEquals(
+            """
+            └>"hello how"
+            """
+        )
         button(.sendButton).tap()
         sleep(1)
         assertContentText(plainText: "hello how", htmlText: "hello how")
@@ -44,8 +65,17 @@ extension WysiwygUITests {
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
         app.keys["delete"].tap()
+        // We assert both the tree content because the text view is containing the predictive text at that moment
+        // Which in the ui test is seen as part of the static text
+        assertTextViewContent("hello how are you")
+        assertTreeEquals(
+            """
+            └>"hello ho"
+            """
+        )
+        button(.sendButton).tap()
         sleep(1)
-        assertTextViewContent("hello ho")
+        assertContentText(plainText: "hello ho", htmlText: "hello ho")
     }
     
     func testDoubleSpaceIntoDot() {
@@ -56,6 +86,11 @@ extension WysiwygUITests {
         app.keys["space"].tap()
         app.keys["space"].tap()
         assertTextViewContent("hello. ")
+        assertTreeEquals(
+            """
+            └>"hello. "
+            """
+        )
     }
 }
 
