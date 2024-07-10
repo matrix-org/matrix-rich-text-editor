@@ -19,7 +19,9 @@ import XCTest
 extension WysiwygUITests {
     func testInlinePredictiveText() {
         sleep(5)
-        app.typeTextCharByCharUsingKeyboard("Hello how")
+        // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
+        app.keyboards.buttons["shift"].tap()
+        app.typeTextCharByCharUsingKeyboard("hello how")
         app.keys["space"].tap()
         sleep(1)
         app.keys["space"].tap()
@@ -28,6 +30,8 @@ extension WysiwygUITests {
     
     func testInlinePredictiveTextIgnored() {
         sleep(5)
+        // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
+        app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("Hello how")
         button(.sendButton).tap()
         sleep(1)
@@ -36,7 +40,9 @@ extension WysiwygUITests {
     
     func testDoubleSpaceIntoDot() {
         sleep(5)
-        app.typeTextCharByCharUsingKeyboard("Hello")
+        // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
+        app.keyboards.buttons["shift"].tap()
+        app.typeTextCharByCharUsingKeyboard("hello")
         app.keys["space"].tap()
         app.keys["space"].tap()
         assertTextViewContent("hello. ")
