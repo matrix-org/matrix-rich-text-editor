@@ -23,7 +23,7 @@ extension WysiwygUITests {
         app.keys["space"].tap()
         sleep(1)
         app.keys["space"].tap()
-        assertTextViewContent("Hello how are you ")
+        assertTextViewContent("hello how are you ")
     }
     
     func testInlinePredictiveTextIgnored() {
@@ -31,7 +31,7 @@ extension WysiwygUITests {
         app.typeTextCharByCharUsingKeyboard("Hello how")
         button(.sendButton).tap()
         sleep(1)
-        assertContentText(plainText: "Hello how", htmlText: "Hello how")
+        assertContentText(plainText: "hello how", htmlText: "hello how")
     }
     
     func testDoubleSpaceIntoDot() {
@@ -39,7 +39,7 @@ extension WysiwygUITests {
         app.typeTextCharByCharUsingKeyboard("Hello")
         app.keys["space"].tap()
         app.keys["space"].tap()
-        assertTextViewContent("Hello. ")
+        assertTextViewContent("hello. ")
     }
 }
 
