@@ -32,7 +32,7 @@ extension WysiwygUITests {
         sleep(5)
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
-        app.typeTextCharByCharUsingKeyboard("Hello how")
+        app.typeTextCharByCharUsingKeyboard("hello how")
         button(.sendButton).tap()
         sleep(1)
         assertContentText(plainText: "hello how", htmlText: "hello how")
