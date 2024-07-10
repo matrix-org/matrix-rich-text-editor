@@ -179,6 +179,11 @@ extension WysiwygUITests {
         XCTAssertTrue(pill.exists)
         XCTAssertEqual(pill.label, displayName)
     }
+    
+    func assertContentText(plainText: String, htmlText: String) {
+        XCTAssert(staticText(.contentText).label == plainText)
+        XCTAssert(staticText(.htmlContentText).label == htmlText)
+    }
 }
 
 extension XCUIElement {
