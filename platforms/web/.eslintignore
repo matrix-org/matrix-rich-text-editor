@@ -9,3 +9,4 @@ vite.demo.config.ts
 scripts
 cypress
 example-wysiwyg
+coverage

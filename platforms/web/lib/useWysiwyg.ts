@@ -27,7 +27,7 @@ import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 import { mapSuggestion } from './suggestion.js';
-import { TraceAction } from './useTestCases/useTestCases.js';
+import { TraceAction } from './useTestCases/types.js';
 
 export { richToPlain, plainToRich } from './conversion';
 

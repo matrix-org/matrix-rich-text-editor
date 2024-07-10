@@ -14,9 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { ComposerUpdate } from '../../generated/wysiwyg';
 import { useTestCases } from './useTestCases';
 
 export type TestUtilities = ReturnType<typeof useTestCases>['utilities'];
+export type TraceAction = (
+    update: ComposerUpdate | null,
+    name: string,
+    value1?: string | number,
+    value2?: string | number,
+) => ComposerUpdate | null;
 
 export type SelectTuple = ['select', number, number];
 export type Tuple =
