@@ -22,7 +22,7 @@ extension WysiwygUITests {
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
-        // We assert both the tree content because the text view is containing the predictive text at that moment
+        // We assert both the tree and textview content because the text view is containing the predictive text at that moment
         // Which in the ui test is seen as part of the static text
         assertTextViewContent("hello how are you")
         assertTreeEquals(
@@ -46,7 +46,7 @@ extension WysiwygUITests {
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
-        // We assert both the tree content because the text view is containing the predictive text at that moment
+        // We assert both the tree and textview content because the text view is containing the predictive text at that moment
         // Which in the ui test is seen as part of the static text
         assertTextViewContent("hello how are you")
         assertTreeEquals(
@@ -65,7 +65,7 @@ extension WysiwygUITests {
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
         app.keys["delete"].tap()
-        // We assert both the tree content because the text view is containing the predictive text at that moment
+        // We assert both the tree and textview content because the text view is containing the predictive text at that moment
         // Which in the ui test is seen as part of the static text
         assertTextViewContent("hello how are you")
         assertTreeEquals(
