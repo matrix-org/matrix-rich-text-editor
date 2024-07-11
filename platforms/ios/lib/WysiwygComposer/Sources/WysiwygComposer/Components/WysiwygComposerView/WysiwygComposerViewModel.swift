@@ -143,7 +143,7 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     private var lastReplaceTextUpdate: ReplaceTextUpdate?
     
     /// Wether the view contains uncommitted text(e.g. a predictive suggestion is shown in grey).
-    private var viewHasUncommitedText: Bool {
+    private var hasUncommitedText: Bool {
         textView.attributedText.htmlChars.withNBSP != committedAttributedText.htmlChars.withNBSP
     }
     
@@ -326,7 +326,7 @@ public extension WysiwygComposerViewModel {
         // Even though we have the delegate disabled during modifications to the textview we still get some duplicate
         // calls to this method in this case specifically. It's very unlikely we would get a valid subsequent call
         // with the same range and replacement text within such a short period of time, so should be safe.
-        if let lastReplaceTextUpdate, lastReplaceTextUpdate.isDuplicate(of: nextTextUpdate) {
+        if let lastReplaceTextUpdate, lastReplaceTextUpdate.shouldDebounce(with: nextTextUpdate) {
             return true
         }
         
@@ -342,23 +342,23 @@ public extension WysiwygComposerViewModel {
         // The system handles certain auto-compelete use-cases with somewhat unusual replacementText/range
         // combinations, some of those edge cases are handled below.
         
-        // Are we backspacing from an inline predictive text suggestion.
-        // When this happens a range/replacementText of this combination is sent.
-        let isExitingPredictiveText = replacementText == ""
-            && viewHasUncommitedText
-            && range == attributedContent.selection && range.length == 0
-        
         // Are we replacing some selected text by tapping the suggestion toolbar
         // When this happens a range/replacementText of this combination is sent.
-        let isReplacingWordWithSuggestion = replacementText == "" && !viewHasUncommitedText && range.length == 0
-        
-        let isNormalBackspace = attributedContent.selection.length == 0 && replacementText == ""
+        let isReplacingWordWithSuggestion = replacementText == "" && !hasUncommitedText && range.length == 0
         
         // A no-op rte side is required here
         if isReplacingWordWithSuggestion {
             return true
         }
         
+        // Are we backspacing from an inline predictive text suggestion.
+        // When this happens a range/replacementText of this combination is sent.
+        let isExitingPredictiveText = replacementText == ""
+            && hasUncommitedText
+            && range == attributedContent.selection && range.length == 0
+        
+        let isNormalBackspace = attributedContent.selection.length == 0 && replacementText == ""
+
         if range != attributedContent.selection {
             select(range: range)
         }
@@ -392,6 +392,8 @@ public extension WysiwygComposerViewModel {
         lastReplaceTextUpdate = nextTextUpdate
         return skipTextViewUpdate
     }
+
+    // swiftlint:enable cyclomatic_complexity
     
     func select(range: NSRange) {
         do {
@@ -652,8 +654,7 @@ private extension WysiwygComposerViewModel {
         do {
             guard !textView.isDictationRunning,
                   let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
-                                                                 to: textView.attributedText.htmlChars)
-            else {
+                                                                 to: textView.attributedText.htmlChars) else {
                 return
             }
             
@@ -759,7 +760,7 @@ private struct ReplaceTextUpdate {
 }
 
 private extension ReplaceTextUpdate {
-    func isDuplicate(of other: ReplaceTextUpdate) -> Bool {
+    func shouldDebounce(with other: ReplaceTextUpdate) -> Bool {
         range == other.range
             && text == other.text
             && fabs(date.timeIntervalSince(other.date)) < Self.debounceThreshold
