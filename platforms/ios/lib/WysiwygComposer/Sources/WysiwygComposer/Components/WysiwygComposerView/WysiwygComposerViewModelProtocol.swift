@@ -28,10 +28,11 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
     func updateCompressedHeightIfNeeded()
 
     /// Replace text in the model.
-    ///
+    /// 
     /// - Parameters:
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.
+    /// - Returns: Whether the textView should continue with the insertion of the replacement text(within shouldChangeTextIn) or it should be left for a subquent model update to reflect the changes.
     func replaceText(range: NSRange, replacementText: String) -> Bool
 
     /// Select given range of text within the model.
