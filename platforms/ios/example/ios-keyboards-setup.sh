@@ -23,3 +23,5 @@ fi
 /usr/libexec/PlistBuddy -c "Add :AppleKeyboards array" "$plist_path"
 /usr/libexec/PlistBuddy -c "Add :AppleKeyboards:0 string 'en_US@sw=QWERTY;hw=Automatic'" "$plist_path"
 /usr/libexec/PlistBuddy -c "Add :AppleKeyboards:1 string 'ja_JP-Kana@sw=Kana;hw=Automatic'" "$plist_path"
+
+/usr/libexec/PlistBuddy -c "Print :AppleKeyboards array" "$plist_path" 2>/dev/null
