@@ -24,10 +24,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup keyboards
-      working-directory: platforms/ios/example
-      run: exec ./ios-keyboards-setup.sh
-
     - name: Install xcresultparser
       run: brew install a7ex/homebrew-formulae/xcresultparser
 

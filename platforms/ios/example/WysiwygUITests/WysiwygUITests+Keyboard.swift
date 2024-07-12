@@ -23,7 +23,7 @@ import XCTest
 extension WysiwygUITests {
     func testInlinePredictiveText() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+        setupKeyboard(.englishQWERTY)
         
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -47,7 +47,7 @@ extension WysiwygUITests {
     
     func testInlinePredictiveTextIsIgnoredWhenSending() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -67,7 +67,7 @@ extension WysiwygUITests {
     
     func testInlinePredictiveTextIsIgnoredWhenDeleting() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -88,7 +88,7 @@ extension WysiwygUITests {
     
     func testDoubleSpaceIntoDot() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -105,7 +105,7 @@ extension WysiwygUITests {
     
     func testDotAfterInlinePredictiveText() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -127,7 +127,7 @@ extension WysiwygUITests {
     
     func testJapaneseKanaDeletion() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "日本語かな")
+        setupKeyboard(.japaneseKana)
 
         app.typeTextCharByCharUsingKeyboard("は")
         assertTextViewContent("は")
@@ -139,6 +139,52 @@ extension WysiwygUITests {
         app.keys["delete"].tap()
         assertTextViewContent("")
         XCTAssertEqual(staticText(.treeText).label, "\n")
+    }
+    
+    private func setupKeyboard(_ keyboard: TestKeyboard) {
+        var changeKeyboardButton: XCUIElement!
+        let nextKeyboard = app.buttons["Next keyboard"]
+        let emoji = app.buttons["Emoji"]
+        if nextKeyboard.exists {
+            changeKeyboardButton = nextKeyboard
+        } else if emoji.exists {
+            changeKeyboardButton = emoji
+        }
+        
+        if changeKeyboardButton == nil {
+            addKeyboardToSettings(keyboard: keyboard)
+            changeKeyboardButton = app.buttons["Next keyboard"]
+        }
+        
+        changeKeyboardButton.press(forDuration: 1)
+        var keyboardSelection = app.tables.staticTexts[keyboard.label]
+        if !keyboardSelection.exists {
+            addKeyboardToSettings(keyboard: keyboard)
+            // No need to tap since it gets selected automatically
+        } else {
+            keyboardSelection.tap()
+        }
+    }
+    
+    private func addKeyboardToSettings(keyboard: TestKeyboard) {
+        let settingsApp = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+        settingsApp.launch()
+        
+        settingsApp.tables.cells.staticTexts["General"].tap()
+        settingsApp.tables.cells.staticTexts["Keyboard"].tap()
+        settingsApp.tables.cells.staticTexts["Keyboards"].tap()
+        if settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].exists {
+            return
+        }
+        settingsApp.tables.cells.staticTexts["AddNewKeyboard"].tap()
+        settingsApp.tables.cells.staticTexts[keyboard.localeIdentifier].tap()
+        if keyboard.hasSubSelection {
+            settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].tap()
+        }
+        settingsApp.buttons["Done"].tap()
+        
+        settingsApp.terminate()
+        app.activate()
     }
 }
 
@@ -152,13 +198,45 @@ private extension XCUIApplication {
             keys[String(char)].tap()
         }
     }
+}
+
+private enum TestKeyboard {
+    case englishQWERTY
+    case japaneseKana
     
-    func setupKeyboardLanguage(named language: String) {
-        let nextKeyboard = buttons["Next keyboard"]
-        while let value = nextKeyboard.value as? String,
-              value != language {
-            nextKeyboard.tap()
+    var keyboardIdentifier: String {
+        switch self {
+        case .englishQWERTY:
+            return "en_US@sw=QWERTY;hw=Automatic"
+        case .japaneseKana:
+            return "ja_JP-Kana@sw=Kana;hw=Automatic"
         }
-        nextKeyboard.tap()
+    }
+    
+    var localeIdentifier: String {
+        switch self {
+        case .englishQWERTY:
+            return "en_US"
+        case .japaneseKana:
+            return "ja_JP"
+        }
+    }
+    
+    var label: String {
+        switch self {
+        case .englishQWERTY:
+            return "English (US)"
+        case .japaneseKana:
+            return "日本語かな"
+        }
+    }
+    
+    var hasSubSelection: Bool {
+        switch self {
+        case .englishQWERTY:
+            return false
+        case .japaneseKana:
+            return true
+        }
     }
 }
