@@ -421,8 +421,8 @@ public extension WysiwygComposerViewModel {
             }
             plainTextContent = textView.attributedText
         } else {
-            let dotInserted = checkForDoubleSpaceToDotConversion()
-            if !dotInserted {
+            let updated = updateForDoubleSpaceToDotConversionIfNeeded() || updateDotAfterInlineTextPredicationIfNeeded()
+            if !updated {
                 reconciliateIfNeeded()
             }
             applyPendingFormatsIfNeeded()
@@ -431,38 +431,75 @@ public extension WysiwygComposerViewModel {
         updateCompressedHeightIfNeeded()
     }
     
-    func checkForDoubleSpaceToDotConversion() -> Bool {
+    /// Checks if the editor automatically replaced two spaces with a dot and reconcile with the model if it did.
+    /// - Returns: Whether the an update was applied.
+    func updateForDoubleSpaceToDotConversionIfNeeded() -> Bool {
         let text = textView.attributedText.htmlChars.withNBSP
-        guard text.count > 0 else {
-            return false
-        }
-        let content = attributedContent.text.htmlChars.withNBSP
-        let dotStart = textView.selectedRange.location - 1
-        let dotEnd = textView.selectedRange.location
-        guard dotStart >= 0, dotEnd <= text.count else {
-            return false
-        }
-        let dotStartIndex = text.index(text.startIndex, offsetBy: dotStart)
-        let dotEndIndex = text.index(after: dotStartIndex)
-        guard
-            dotStartIndex < text.endIndex,
-            dotEndIndex <= text.endIndex,
-            dotStartIndex < content.endIndex,
-            dotEndIndex <= content.endIndex
+        let textSelection = textView.selectedRange
+        // Check if the last character in the editor is a dot.
+        guard text.count > 1,
+              textSelection.location > 1,
+              text.prefix(textSelection.location).hasSuffix(".")
         else {
             return false
         }
-        let dotRange = dotStartIndex..<dotEndIndex
-        let textPotentialDot = String(text[dotRange])
-        let contentPotentialDot = String(content[dotRange])
-        if textPotentialDot == ".", contentPotentialDot != "." {
-            let replaceUpdate = model.replaceTextIn(newText: ".",
-                                                    start: UInt32(dotStart),
-                                                    end: UInt32(dotEnd))
-            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
-            return true
+        // Check if the last 2 characters before the cursor in the model are whitespace. i.e. "  |"
+        let content = attributedContent.text.htmlChars.withNBSP
+        let contentSelection = attributedContent.selection
+        guard content.count > 1,
+              contentSelection.location > 1,
+              String(content.prefix(contentSelection.location)
+                  .suffix(2))
+              .trimmingCharacters(in: .whitespaces)
+              .isEmpty
+        else {
+            return false
         }
-        return false
+        // replace the 2 whitespace characters just before and cursor with ". "
+        let replaceUpdate = model.replaceTextIn(newText: ". ",
+                                                start: UInt32(contentSelection.location - 2),
+                                                end: UInt32(contentSelection.location))
+        applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+        return true
+    }
+    
+    /// Checks if the editor automatically moved the cursor back a space when pressing a dot after
+    /// accepting an inline predictive text suggestion. It then reconciles with the model if it did.
+    /// - Returns: Whether the an update was applied.
+    func updateDotAfterInlineTextPredicationIfNeeded() -> Bool {
+        let text = textView.attributedText.htmlChars.withNBSP
+        let textSelection = textView.selectedRange
+        // Check if the last character in the editor is a dot.
+        guard text.count > 1,
+              textSelection.location > 1,
+              text.prefix(textSelection.location).hasSuffix(".")
+        else {
+            return false
+        }
+        let content = attributedContent.text.htmlChars.withNBSP
+        let contentSelection = attributedContent.selection
+        guard content.count > 1,
+              contentSelection.location > 1,
+              contentSelection.location + 1 <= content.count
+        else {
+            return false
+        }
+        let lastTwo = content.prefix(contentSelection.location + 1).suffix(2)
+        // Check if the characters just before and after the cursor are a dot and whitespace ie " |."
+        guard lastTwo.prefix(1)
+            .trimmingCharacters(in: .whitespaces)
+            .isEmpty,
+            lastTwo.suffix(1) == "."
+        else {
+            return false
+        }
+        
+        // replace characters just before and after the cursor with a dot
+        let replaceUpdate = model.replaceTextIn(newText: ".",
+                                                start: UInt32(contentSelection.location - 1),
+                                                end: UInt32(contentSelection.location + 1))
+        applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+        return true
     }
 
     func applyLinkOperation(_ linkOperation: WysiwygLinkOperation) {
@@ -685,7 +722,7 @@ private extension WysiwygComposerViewModel {
                 // Restore from the model, as otherwise the composer will enter a broken state
                 applyAtributedContent()
                 updateCompressedHeightIfNeeded()
-                Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
+                Logger.viewModel.logError(["Reconciliate failed(\(error)), content has been restored from the model"],
                                           functionName: #function)
             case AttributedRangeError.outOfBoundsAttributedIndex,
                  AttributedRangeError.outOfBoundsHtmlIndex:
