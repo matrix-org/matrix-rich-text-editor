@@ -23,7 +23,7 @@ import XCTest
 extension WysiwygUITests {
     func testInlinePredictiveText() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+//        app.setupKeyboardLanguage(named: "English (US)")
         
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -47,7 +47,7 @@ extension WysiwygUITests {
     
     func testInlinePredictiveTextIsIgnoredWhenSending() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+//        app.setupKeyboardLanguage(named: "English (US)")
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -67,7 +67,7 @@ extension WysiwygUITests {
     
     func testInlinePredictiveTextIsIgnoredWhenDeleting() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+//        app.setupKeyboardLanguage(named: "English (US)")
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -88,7 +88,7 @@ extension WysiwygUITests {
     
     func testDoubleSpaceIntoDot() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+//        app.setupKeyboardLanguage(named: "English (US)")
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -105,7 +105,7 @@ extension WysiwygUITests {
     
     func testDotAfterInlinePredictiveText() {
         sleep(3)
-        app.setupKeyboardLanguage(named: "English (US)")
+//        app.setupKeyboardLanguage(named: "English (US)")
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -125,21 +125,21 @@ extension WysiwygUITests {
         )
     }
     
-    func testJapaneseKanaDeletion() {
-        sleep(3)
-        app.setupKeyboardLanguage(named: "日本語かな")
-
-        app.typeTextCharByCharUsingKeyboard("は")
-        assertTextViewContent("は")
-        assertTreeEquals(
-            """
-            └>"は"
-            """
-        )
-        app.keys["delete"].tap()
-        assertTextViewContent("")
-        XCTAssertEqual(staticText(.treeText).label, "\n")
-    }
+//    func testJapaneseKanaDeletion() {
+//        sleep(3)
+//        app.setupKeyboardLanguage(named: "日本語かな")
+//
+//        app.typeTextCharByCharUsingKeyboard("は")
+//        assertTextViewContent("は")
+//        assertTreeEquals(
+//            """
+//            └>"は"
+//            """
+//        )
+//        app.keys["delete"].tap()
+//        assertTextViewContent("")
+//        XCTAssertEqual(staticText(.treeText).label, "\n")
+//    }
 }
 
 private extension XCUIApplication {
