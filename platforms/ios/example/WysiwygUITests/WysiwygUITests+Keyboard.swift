@@ -22,7 +22,7 @@ import XCTest
 // Such configuration is done through a script called ios-keyboard-setup.sh but can also be done manually
 extension WysiwygUITests {
     func testInlinePredictiveText() {
-        sleep(3)
+        sleep(1)
         setupKeyboard(.englishQWERTY)
         
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
@@ -46,7 +46,7 @@ extension WysiwygUITests {
     }
     
     func testInlinePredictiveTextIsIgnoredWhenSending() {
-        sleep(3)
+        sleep(1)
         setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
@@ -66,7 +66,7 @@ extension WysiwygUITests {
     }
     
     func testInlinePredictiveTextIsIgnoredWhenDeleting() {
-        sleep(3)
+        sleep(1)
         setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
@@ -87,7 +87,7 @@ extension WysiwygUITests {
     }
     
     func testDoubleSpaceIntoDot() {
-        sleep(3)
+        sleep(1)
         setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
@@ -104,7 +104,7 @@ extension WysiwygUITests {
     }
     
     func testDotAfterInlinePredictiveText() {
-        sleep(3)
+        sleep(1)
         setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
@@ -126,7 +126,7 @@ extension WysiwygUITests {
     }
     
     func testJapaneseKanaDeletion() {
-        sleep(3)
+        sleep(1)
         setupKeyboard(.japaneseKana)
 
         app.typeTextCharByCharUsingKeyboard("は")
