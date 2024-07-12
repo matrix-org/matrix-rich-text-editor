@@ -69,7 +69,11 @@ jobs:
         flags: unittests-ios, unittests
         # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
         token: ${{ secrets.CODECOV_TOKEN }}
-
+        
+    - name: Setup keyboards
+      working-directory: platforms/ios/example
+      run: exec ./ios-keyboards-setup.sh
+      
     - name: UI test coverage
       working-directory: platforms/ios/example
       run: exec ./ios-ui-test-coverage.sh

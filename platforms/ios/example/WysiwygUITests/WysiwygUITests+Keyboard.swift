@@ -16,9 +16,15 @@
 
 import XCTest
 
+// These tests work on the assunmption that we always have the software keyboard enabled
+// which is handled through the run script
+// and that the simulator is configured with the following 2 keyboards: English (US) and Japanese Kana
+// Such configuration is done through a script called ios-keyboard-setup.sh but can also be done manually
 extension WysiwygUITests {
     func testInlinePredictiveText() {
         sleep(3)
+        app.setupKeyboardLanguage(named: "English (US)")
+        
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how a")
@@ -41,6 +47,8 @@ extension WysiwygUITests {
     
     func testInlinePredictiveTextIsIgnoredWhenSending() {
         sleep(3)
+        app.setupKeyboardLanguage(named: "English (US)")
+
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
@@ -59,6 +67,8 @@ extension WysiwygUITests {
     
     func testInlinePredictiveTextIsIgnoredWhenDeleting() {
         sleep(3)
+        app.setupKeyboardLanguage(named: "English (US)")
+
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how")
@@ -78,6 +88,8 @@ extension WysiwygUITests {
     
     func testDoubleSpaceIntoDot() {
         sleep(3)
+        app.setupKeyboardLanguage(named: "English (US)")
+
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello")
@@ -93,6 +105,8 @@ extension WysiwygUITests {
     
     func testDotAfterInlinePredictiveText() {
         sleep(3)
+        app.setupKeyboardLanguage(named: "English (US)")
+
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
         app.typeTextCharByCharUsingKeyboard("hello how a")
@@ -110,9 +124,25 @@ extension WysiwygUITests {
             """
         )
     }
+    
+    func testJapaneseKanaDeletion() {
+        sleep(3)
+        app.setupKeyboardLanguage(named: "日本語かな")
+
+        app.typeTextCharByCharUsingKeyboard("は")
+        assertTextViewContent("は")
+        assertTreeEquals(
+            """
+            └>"は"
+            """
+        )
+        app.keys["delete"].tap()
+        assertTextViewContent("")
+        XCTAssertEqual(staticText(.treeText).label, "\n")
+    }
 }
 
-extension XCUIApplication {
+private extension XCUIApplication {
     func typeTextCharByCharUsingKeyboard(_ text: String) {
         for char in text {
             if char == " " {
@@ -121,5 +151,14 @@ extension XCUIApplication {
             }
             keys[String(char)].tap()
         }
+    }
+    
+    func setupKeyboardLanguage(named language: String) {
+        let nextKeyboard = buttons["Next keyboard"]
+        while let value = nextKeyboard.value as? String,
+              value != language {
+            nextKeyboard.tap()
+        }
+        nextKeyboard.tap()
     }
 }
