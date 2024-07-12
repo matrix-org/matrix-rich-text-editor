@@ -16,10 +16,8 @@
 
 import XCTest
 
-// These tests work on the assunmption that we always have the software keyboard enabled
-// which is handled through the run script
-// and that the simulator is configured with the following 2 keyboards: English (US) and Japanese Kana
-// Such configuration is done through a script called ios-keyboard-setup.sh but can also be done manually
+// These tests work on the assunmption that we always have the software keyboard enabled which is handled through a build phase run script.
+// The following tests may also require specific keyboard languages that will be automatically added if needed.
 extension WysiwygUITests {
     func testInlinePredictiveText() {
         sleep(1)
