@@ -90,6 +90,26 @@ extension WysiwygUITests {
             """
         )
     }
+    
+    func testDotAfterInlinePredictiveText() {
+        sleep(3)
+        // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
+        app.keyboards.buttons["shift"].tap()
+        app.typeTextCharByCharUsingKeyboard("hello how a")
+        // We assert both the tree and textview content because the text view is containing the predictive text at that moment
+        // Which in the ui test is seen as part of the static text
+        assertTextViewContent("hello how are you")
+        app.keys["space"].tap()
+        app.keys["more"].tap()
+        app.keys["."].tap()
+        assertTextViewContent("hello how are you.")
+        // In the failure case a second dot is added in the tree.
+        assertTreeEquals(
+            """
+            └>"hello how are you."
+            """
+        )
+    }
 }
 
 extension XCUIApplication {
