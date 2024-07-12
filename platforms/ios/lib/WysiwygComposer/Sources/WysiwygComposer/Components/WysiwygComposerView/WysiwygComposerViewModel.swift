@@ -339,6 +339,10 @@ public extension WysiwygComposerViewModel {
         let update: ComposerUpdate
         let skipTextViewUpdate: Bool
 
+        if range != attributedContent.selection {
+            select(range: range)
+        }
+        
         // The system handles certain auto-compelete use-cases with somewhat unusual replacementText/range
         // combinations, some of those edge cases are handled below.
         
@@ -358,10 +362,6 @@ public extension WysiwygComposerViewModel {
             && range == attributedContent.selection && range.length == 0
         
         let isNormalBackspace = attributedContent.selection.length == 0 && replacementText == ""
-
-        if range != attributedContent.selection {
-            select(range: range)
-        }
         
         if isNormalBackspace || isExitingPredictiveText {
             update = model.backspace()

@@ -193,7 +193,10 @@ struct UITextViewWrapper: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
-            return replaceText(range, text)
+            let change = replaceText(range, text)
+            Logger.textView.logDebug(["change: \(change)"],
+                                     functionName: #function)
+            return change
         }
         
         func textViewDidChange(_ textView: UITextView) {

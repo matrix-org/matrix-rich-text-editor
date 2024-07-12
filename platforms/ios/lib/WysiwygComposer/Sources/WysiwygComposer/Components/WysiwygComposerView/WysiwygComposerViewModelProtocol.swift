@@ -28,7 +28,7 @@ public protocol WysiwygComposerViewModelProtocol: AnyObject {
     func updateCompressedHeightIfNeeded()
 
     /// Replace text in the model.
-    /// 
+    ///
     /// - Parameters:
     ///   - range: Range to replace.
     ///   - replacementText: Replacement text to apply.

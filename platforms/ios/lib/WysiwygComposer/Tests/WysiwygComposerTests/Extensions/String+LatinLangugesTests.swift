@@ -24,7 +24,7 @@ final class StringLatinLangugesTests: XCTestCase {
         XCTAssertTrue("helló, ".containsLatinAndCommonCharactersOnly)
         XCTAssertTrue("helló, ".containsLatinAndCommonCharactersOnly)
         XCTAssertTrue("😄🛴🤯❤️".containsLatinAndCommonCharactersOnly)
-        //Test the object replacement character as defined in String+Character extension.
+        // Test the object replacement character as defined in String+Character extension.
         XCTAssertTrue(String.object.containsLatinAndCommonCharactersOnly)
         XCTAssertTrue("!@££$%^&*()".containsLatinAndCommonCharactersOnly)
         
