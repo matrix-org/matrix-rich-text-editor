@@ -467,6 +467,10 @@ public extension WysiwygComposerViewModel {
     /// accepting an inline predictive text suggestion. It then reconciles with the model if it did.
     /// - Returns: Whether the an update was applied.
     func updateDotAfterInlineTextPredicationIfNeeded() -> Bool {
+        // This optimisation to predictive inline text only came in in 17.5
+        guard #available(iOS 17.5, *) else {
+            return false
+        }
         let text = textView.attributedText.htmlChars.withNBSP
         let textSelection = textView.selectedRange
         // Check if the last character in the editor is a dot.

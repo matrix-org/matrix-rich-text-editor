@@ -114,11 +114,19 @@ extension WysiwygUITests {
         app.keys["space"].tap()
         app.keys["more"].tap()
         app.keys["."].tap()
-        assertTextViewContent("hello how are you.")
+        
+        // This optimisation to predictive inline text was introduced in 17.5
+        let correctText: String
+        if #available(iOS 17.5, *) {
+            correctText = "hello how are you."
+        } else {
+            correctText = "hello how are you ."
+        }
+        assertTextViewContent(correctText)
         // In the failure case a second dot is added in the tree.
         assertTreeEquals(
             """
-            └>"hello how are you."
+            └>"\(correctText)"
             """
         )
     }
