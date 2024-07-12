@@ -52,6 +52,10 @@ jobs:
       shell: bash
       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
       id: get_branch
+      
+    - name: Setup keyboards
+      working-directory: platforms/ios/example
+      run: exec ./ios-keyboards-setup.sh
 
     - name: Unit test coverage
       working-directory: platforms/ios/example
@@ -69,7 +73,7 @@ jobs:
         flags: unittests-ios, unittests
         # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
         token: ${{ secrets.CODECOV_TOKEN }}
-
+      
     - name: UI test coverage
       working-directory: platforms/ios/example
       run: exec ./ios-ui-test-coverage.sh

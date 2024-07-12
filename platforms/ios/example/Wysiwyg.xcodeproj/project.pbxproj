@@ -45,7 +45,7 @@
 		A6F4D0CF29AE0C1500087A3E /* Users.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F4D0CE29AE0C1500087A3E /* Users.swift */; };
 		A6F4D0D129AE0C3200087A3E /* Rooms.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F4D0D029AE0C3200087A3E /* Rooms.swift */; };
 		A6F4D0D329AE0C5100087A3E /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F4D0D229AE0C5100087A3E /* Commands.swift */; };
-		A75C6AD22C3E989D0096D3A4 /* WysiwygUITests+InlinePredictiveText.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75C6AD12C3E989D0096D3A4 /* WysiwygUITests+InlinePredictiveText.swift */; };
+		A75C6AD22C3E989D0096D3A4 /* WysiwygUITests+Keyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75C6AD12C3E989D0096D3A4 /* WysiwygUITests+Keyboard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -98,7 +98,7 @@
 		A6F4D0CE29AE0C1500087A3E /* Users.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Users.swift; sourceTree = "<group>"; };
 		A6F4D0D029AE0C3200087A3E /* Rooms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rooms.swift; sourceTree = "<group>"; };
 		A6F4D0D229AE0C5100087A3E /* Commands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Commands.swift; sourceTree = "<group>"; };
-		A75C6AD12C3E989D0096D3A4 /* WysiwygUITests+InlinePredictiveText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+InlinePredictiveText.swift"; sourceTree = "<group>"; };
+		A75C6AD12C3E989D0096D3A4 /* WysiwygUITests+Keyboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WysiwygUITests+Keyboard.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -180,7 +180,7 @@
 				A64AB145296C759A00F08494 /* WysiwygUITests+Quotes.swift */,
 				A661FDA629B0ACB400E799A6 /* WysiwygUITests+Suggestions.swift */,
 				A64AB13D296C732500F08494 /* WysiwygUITests+Typing.swift */,
-				A75C6AD12C3E989D0096D3A4 /* WysiwygUITests+InlinePredictiveText.swift */,
+				A75C6AD12C3E989D0096D3A4 /* WysiwygUITests+Keyboard.swift */,
 			);
 			path = WysiwygUITests;
 			sourceTree = "<group>";
@@ -454,7 +454,7 @@
 				A6BB18D729F9191C00EB6366 /* WysiwygUITests+Autocorrection.swift in Sources */,
 				A6472CC62886CF840021A0E8 /* WysiwygUITests.swift in Sources */,
 				A64AB140296C73CE00F08494 /* WysiwygUITests+Links.swift in Sources */,
-				A75C6AD22C3E989D0096D3A4 /* WysiwygUITests+InlinePredictiveText.swift in Sources */,
+				A75C6AD22C3E989D0096D3A4 /* WysiwygUITests+Keyboard.swift in Sources */,
 				A661FDA729B0ACB400E799A6 /* WysiwygUITests+Suggestions.swift in Sources */,
 				A68E7141291D40710023CC04 /* WysiwygSharedConstants.swift in Sources */,
 				A64AB144296C747C00F08494 /* WysiwygUITests+Format.swift in Sources */,
