@@ -19,6 +19,7 @@ mod ffi_composer_action;
 mod ffi_composer_model;
 mod ffi_composer_state;
 mod ffi_composer_update;
+mod ffi_dom;
 mod ffi_dom_creation_error;
 mod ffi_link_actions;
 mod ffi_mention_detector;

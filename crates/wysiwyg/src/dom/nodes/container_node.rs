@@ -27,11 +27,14 @@ use crate::dom::unicode_string::{UnicodeStr, UnicodeStrExt, UnicodeStringExt};
 use crate::dom::{self, UnicodeString};
 use crate::{InlineFormatType, ListType};
 
+use super::new_node_id;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ContainerNode<S>
 where
     S: UnicodeString,
 {
+    pub id: usize,
     name: S,
     kind: ContainerNodeKind<S>,
     attrs: Option<Vec<(S, S)>>,
@@ -84,6 +87,7 @@ where
         children: Vec<DomNode<S>>,
     ) -> Self {
         Self {
+            id: new_node_id(),
             name,
             kind,
             attrs,
@@ -94,6 +98,7 @@ where
 
     pub fn new_paragraph(children: Vec<DomNode<S>>) -> Self {
         Self {
+            id: new_node_id(),
             name: "p".into(),
             kind: ContainerNodeKind::Paragraph,
             attrs: None,
@@ -108,6 +113,7 @@ where
     ) -> Self {
         let format_type = InlineFormatType::from(format.clone());
         Self {
+            id: new_node_id(),
             name: format,
             kind: ContainerNodeKind::Formatting(format_type),
             attrs: None,
@@ -121,6 +127,7 @@ where
         children: Vec<DomNode<S>>,
     ) -> Self {
         Self {
+            id: new_node_id(),
             name: format.tag().into(),
             kind: ContainerNodeKind::Formatting(format),
             attrs: None,
@@ -131,6 +138,7 @@ where
 
     pub fn new_list(list_type: ListType, children: Vec<DomNode<S>>) -> Self {
         Self {
+            id: new_node_id(),
             name: list_type.tag().into(),
             kind: ContainerNodeKind::List(list_type),
             attrs: None,
@@ -141,6 +149,7 @@ where
 
     pub fn new_list_item(children: Vec<DomNode<S>>) -> Self {
         Self {
+            id: new_node_id(),
             name: "li".into(),
             kind: ContainerNodeKind::ListItem,
             attrs: None,
@@ -151,6 +160,7 @@ where
 
     pub fn new_code_block(children: Vec<DomNode<S>>) -> Self {
         Self {
+            id: new_node_id(),
             name: "codeblock".into(),
             kind: ContainerNodeKind::CodeBlock,
             attrs: None,
@@ -161,6 +171,7 @@ where
 
     pub fn new_quote(children: Vec<DomNode<S>>) -> Self {
         Self {
+            id: new_node_id(),
             name: "blockquote".into(),
             kind: ContainerNodeKind::Quote,
             attrs: None,
@@ -389,6 +400,7 @@ where
         attributes.push(("href".into(), url.clone()));
 
         Self {
+            id: new_node_id(),
             name: "a".into(),
             kind: ContainerNodeKind::Link(url),
             attrs: Some(attributes),
@@ -430,6 +442,7 @@ where
         children: Vec<DomNode<S>>,
     ) -> Self {
         Self {
+            id: new_node_id(),
             name: self.name.clone(),
             kind: self.kind.clone(),
             attrs: self.attrs.clone(),

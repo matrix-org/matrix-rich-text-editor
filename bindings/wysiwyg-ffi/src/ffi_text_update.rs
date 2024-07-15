@@ -1,10 +1,12 @@
 use widestring::Utf16String;
 
+use crate::ffi_dom::DomNode;
+
 #[derive(uniffi::Enum)]
 pub enum TextUpdate {
     Keep,
     ReplaceAll {
-        replacement_html: Vec<u16>,
+        replacement_dom: DomNode,
         start_utf16_codeunit: u32,
         end_utf16_codeunit: u32,
     },
@@ -22,7 +24,11 @@ impl TextUpdate {
                 let start_utf16_codeunit: usize = replace_all.start.into();
                 let end_utf16_codeunit: usize = replace_all.end.into();
                 Self::ReplaceAll {
-                    replacement_html: replace_all.replacement_html.into_vec(),
+                    replacement_dom: DomNode::from(
+                        wysiwyg::DomNode::Container(
+                            replace_all.replacement_dom.clone(),
+                        ),
+                    ),
                     start_utf16_codeunit: u32::try_from(start_utf16_codeunit)
                         .unwrap(),
                     end_utf16_codeunit: u32::try_from(end_utf16_codeunit)

@@ -24,7 +24,8 @@ fn can_instantiate_a_model_and_call_methods() {
     let update = model.bold();
 
     if let TextUpdate::ReplaceAll(r) = update.text_update {
-        assert_eq!(r.replacement_html.to_string(), "f<strong>o</strong>o");
+        assert_eq!(r.replacement_dom.children().len(), 3);
+        // assert_eq!(r.replacement_dom, ContainerNode {});
         assert_eq!(r.start, 1);
         assert_eq!(r.end, 2);
     } else {

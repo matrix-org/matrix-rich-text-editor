@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::dom::nodes::ContainerNode;
 use crate::dom::UnicodeString;
 use crate::link_action::LinkActionUpdate;
 use crate::{
     Location, MenuAction, MenuState, ReplaceAll, Selection, TextUpdate,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ComposerUpdate<S>
 where
     S: UnicodeString,
@@ -70,7 +71,7 @@ where
     }
 
     pub fn replace_all(
-        replacement_html: S,
+        replacement_dom: ContainerNode<S>,
         start: Location,
         end: Location,
         menu_state: MenuState,
@@ -79,7 +80,7 @@ where
     ) -> Self {
         Self {
             text_update: TextUpdate::ReplaceAll(ReplaceAll {
-                replacement_html,
+                replacement_dom,
                 start,
                 end,
             }),

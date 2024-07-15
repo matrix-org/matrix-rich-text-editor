@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{dom::UnicodeString, Location};
+use crate::{
+    dom::{nodes::ContainerNode, UnicodeString},
+    Location,
+};
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TextUpdate<S>
 where
     S: UnicodeString,
@@ -24,12 +27,13 @@ where
     Select(Selection),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReplaceAll<S>
 where
     S: UnicodeString,
 {
-    pub replacement_html: S,
+    // pub replacement_html: S,
+    pub replacement_dom: ContainerNode<S>,
     pub start: Location,
     pub end: Location,
 }

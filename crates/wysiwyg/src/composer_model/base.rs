@@ -166,7 +166,7 @@ where
         self.state.dom.assert_transaction_not_in_progress();
 
         ComposerUpdate::replace_all(
-            self.state.dom.to_html(),
+            self.state.dom.document().clone(),
             self.state.start,
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::KeepIfUnchanged),
@@ -182,7 +182,7 @@ where
         self.state.dom.assert_transaction_not_in_progress();
 
         ComposerUpdate::replace_all(
-            self.state.dom.to_html(),
+            self.state.dom.document().clone(),
             self.state.start,
             self.state.end,
             self.compute_menu_state(MenuStateComputeType::AlwaysUpdate),

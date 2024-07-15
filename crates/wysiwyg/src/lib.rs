@@ -36,6 +36,8 @@ pub use crate::composer_action::ComposerAction;
 pub use crate::composer_model::ComposerModel;
 pub use crate::composer_state::ComposerState;
 pub use crate::composer_update::ComposerUpdate;
+pub use crate::dom::nodes::ContainerNode;
+pub use crate::dom::nodes::ContainerNodeKind;
 pub use crate::dom::nodes::DomNode;
 pub use crate::dom::parser::parse;
 pub use crate::dom::DomCreationError;
