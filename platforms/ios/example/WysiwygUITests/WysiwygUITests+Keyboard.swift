@@ -141,6 +141,8 @@ extension WysiwygUITests {
     
     private func setupKeyboard(_ keyboard: TestKeyboard) {
         var changeKeyboardButton: XCUIElement!
+        // If only 1 language + emoji keyboards are present the emoji button is used to change language
+        // otherwise the button next keyboard button will be present instead
         let nextKeyboard = app.buttons["Next keyboard"]
         let emoji = app.buttons["Emoji"]
         if nextKeyboard.exists {
@@ -149,9 +151,13 @@ extension WysiwygUITests {
             changeKeyboardButton = emoji
         }
         
+        // This means that there is only keyboard and no emoji keyboard setup, so we need to check the settings
         if changeKeyboardButton == nil {
-            addKeyboardToSettings(keyboard: keyboard)
-            changeKeyboardButton = app.buttons["Next keyboard"]
+            if addKeyboardToSettings(keyboard: keyboard) {
+                changeKeyboardButton = app.buttons["Next keyboard"]
+            } else {
+                return
+            }
         }
         
         changeKeyboardButton.press(forDuration: 1)
@@ -164,7 +170,9 @@ extension WysiwygUITests {
         }
     }
     
-    private func addKeyboardToSettings(keyboard: TestKeyboard) {
+    /// returns true if the keyboard has been added, otherwise if already present will return false 
+    @discardableResult
+    private func addKeyboardToSettings(keyboard: TestKeyboard) -> Bool {
         let settingsApp = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
         settingsApp.launch()
         
@@ -172,7 +180,7 @@ extension WysiwygUITests {
         settingsApp.tables.cells.staticTexts["Keyboard"].tap()
         settingsApp.tables.cells.staticTexts["Keyboards"].tap()
         if settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].exists {
-            return
+            return false
         }
         settingsApp.tables.cells.staticTexts["AddNewKeyboard"].tap()
         settingsApp.tables.cells.staticTexts[keyboard.localeIdentifier].tap()
@@ -183,6 +191,7 @@ extension WysiwygUITests {
         
         settingsApp.terminate()
         app.activate()
+        return true
     }
 }
 
