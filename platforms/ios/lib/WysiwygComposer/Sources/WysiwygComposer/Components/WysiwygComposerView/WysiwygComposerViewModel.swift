@@ -311,7 +311,7 @@ public extension WysiwygComposerViewModel {
         compressedHeight = min(maxCompressedHeight, max(minHeight, idealTextHeight))
     }
 
-    // swiftlint:disable cyclomatic_complexity
+    // swiftlint:disable:next cyclomatic_complexity
     func replaceText(range: NSRange, replacementText: String) -> Bool {
         guard shouldReplaceText else {
             return false
@@ -392,8 +392,6 @@ public extension WysiwygComposerViewModel {
         lastReplaceTextUpdate = nextTextUpdate
         return skipTextViewUpdate
     }
-
-    // swiftlint:enable cyclomatic_complexity
     
     func select(range: NSRange) {
         do {
