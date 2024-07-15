@@ -169,7 +169,7 @@ extension WysiwygUITests {
         }
         
         changeKeyboardButton.press(forDuration: 1)
-        var keyboardSelection = app.tables.staticTexts[keyboard.label]
+        let keyboardSelection = app.tables.staticTexts[keyboard.label]
         if !keyboardSelection.exists {
             addKeyboardToSettings(keyboard: keyboard)
             // No need to tap since it gets selected automatically
@@ -178,10 +178,12 @@ extension WysiwygUITests {
         }
     }
     
-    /// returns true if the keyboard has been added, otherwise if already present will return false 
+    /// returns true if the keyboard has been added, otherwise if already present will return false
     @discardableResult
     private func addKeyboardToSettings(keyboard: TestKeyboard) -> Bool {
         let settingsApp = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+        // In case it was already open
+        settingsApp.terminate()
         settingsApp.launch()
         
         settingsApp.tables.cells.staticTexts["General"].tap()
