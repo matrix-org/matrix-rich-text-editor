@@ -161,17 +161,16 @@ extension WysiwygUITests {
         
         if changeKeyboardButton == nil {
             addKeyboardToSettings(keyboard: keyboard)
-            changeKeyboardButton = app.buttons["Next keyboard"]
+            return
         }
         
         changeKeyboardButton.press(forDuration: 1)
-        var keyboardSelection = app.tables.staticTexts[keyboard.label]
+        let keyboardSelection = app.tables.staticTexts[keyboard.label]
         if !keyboardSelection.exists {
             addKeyboardToSettings(keyboard: keyboard)
-            // No need to tap since it gets selected automatically
-        } else {
-            keyboardSelection.tap()
+            return
         }
+        keyboardSelection.tap()
     }
     
     private func addKeyboardToSettings(keyboard: TestKeyboard) {
@@ -190,9 +189,12 @@ extension WysiwygUITests {
             settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].tap()
         }
         settingsApp.buttons["Done"].tap()
-        sleep(10)
+        sleep(1)
         settingsApp.terminate()
+        
         app.launch()
+        textView.tap()
+        setupKeyboard(keyboard)
     }
 }
 
