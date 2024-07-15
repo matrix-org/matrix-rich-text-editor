@@ -172,7 +172,6 @@ extension WysiwygUITests {
         } else {
             keyboardSelection.tap()
         }
-        sleep(2)
     }
     
     private func addKeyboardToSettings(keyboard: TestKeyboard) {
@@ -191,7 +190,7 @@ extension WysiwygUITests {
             settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].tap()
         }
         settingsApp.buttons["Done"].tap()
-        
+        sleep(2)
         settingsApp.terminate()
         app.activate()
     }
