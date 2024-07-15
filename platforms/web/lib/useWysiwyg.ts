@@ -21,13 +21,13 @@ import {
     FormattingFunctions,
     InputEventProcessor,
     MappedSuggestion,
+    TraceAction,
 } from './types.js';
 import { useFormattingFunctions } from './useFormattingFunctions';
 import { useComposerModel } from './useComposerModel';
 import { useListeners } from './useListeners';
 import { useTestCases } from './useTestCases';
 import { mapSuggestion } from './suggestion.js';
-import { TraceAction } from './useTestCases/types.js';
 
 export { richToPlain, plainToRich } from './conversion';
 
