@@ -169,13 +169,12 @@ extension WysiwygUITests {
         }
         
         changeKeyboardButton.press(forDuration: 1)
-        let keyboardSelection = app.tables.staticTexts[keyboard.label]
+        var keyboardSelection = app.tables.staticTexts[keyboard.label]
         if !keyboardSelection.exists {
             addKeyboardToSettings(keyboard: keyboard)
-            // No need to tap since it gets selected automatically
-        } else {
-            keyboardSelection.tap()
+            keyboardSelection = app.tables.staticTexts[keyboard.label]
         }
+        keyboardSelection.tap()
     }
     
     /// returns true if the keyboard has been added, otherwise if already present will return false
