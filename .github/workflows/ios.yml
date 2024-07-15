@@ -59,7 +59,16 @@ jobs:
 
     - name: Collect coverage
       working-directory: platforms/ios/example
-      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) tests.xcresult > tests.xml
+      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) tests.xcresult > tests.xml 
+
+    - name: Upload unit test coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./platforms/ios/example/tests.xml
+        fail_ci_if_error: true
+        flags: unittests-ios, unittests
+        # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
+        token: ${{ secrets.CODECOV_TOKEN }}
       
     - name: UI test coverage
       working-directory: platforms/ios/example
@@ -67,4 +76,13 @@ jobs:
 
     - name: Collect coverage
       working-directory: platforms/ios/example
-      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) ui-tests.xcresult > ui-tests.xml
+      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) ui-tests.xcresult > ui-tests.xml 
+
+    - name: Upload ui test coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./platforms/ios/example/ui-tests.xml
+        fail_ci_if_error: true
+        flags: uitests-ios, uitests
+        # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
+        token: ${{ secrets.CODECOV_TOKEN }}
