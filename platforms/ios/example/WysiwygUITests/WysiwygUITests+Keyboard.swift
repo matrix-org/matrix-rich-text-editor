@@ -172,7 +172,7 @@ extension WysiwygUITests {
         var keyboardSelection = app.tables.staticTexts[keyboard.label]
         if !keyboardSelection.exists {
             addKeyboardToSettings(keyboard: keyboard)
-            keyboardSelection = app.tables.staticTexts[keyboard.label]
+            setupKeyboard(keyboard)
         }
         keyboardSelection.tap()
     }
