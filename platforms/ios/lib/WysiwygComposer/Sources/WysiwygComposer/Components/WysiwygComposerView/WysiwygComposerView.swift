@@ -85,7 +85,9 @@ public struct WysiwygComposerView: View {
 
     @ViewBuilder
     private var placeholderView: some View {
-        if viewModel.isContentEmpty, !viewModel.textView.isDictationRunning {
+        // The content can be empty but the textview not, e.g. if you start dictation
+        // but have not committed the text yet.
+        if viewModel.textView.attributedText.length == 0 {
             Text(placeholder)
                 .font(Font(UIFont.preferredFont(forTextStyle: .body)))
                 .foregroundColor(placeholderColor)
@@ -191,7 +193,10 @@ struct UITextViewWrapper: UIViewRepresentable {
                                       textView.logText,
                                       "Replacement: \"\(text)\""],
                                      functionName: #function)
-            return replaceText(range, text)
+            let change = replaceText(range, text)
+            Logger.textView.logDebug(["change: \(change)"],
+                                     functionName: #function)
+            return change
         }
         
         func textViewDidChange(_ textView: UITextView) {

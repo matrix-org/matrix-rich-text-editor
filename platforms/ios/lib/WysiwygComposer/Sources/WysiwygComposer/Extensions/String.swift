@@ -21,4 +21,13 @@ extension String {
     var utf16Length: Int {
         (self as NSString).length
     }
+    
+    /// Converts all whitespaces to NBSP to avoid diffs caused by HTML translations.
+    var withNBSP: String {
+        String(map { $0.isWhitespace ? Character.nbsp : $0 })
+    }
+    
+    var containsLatinAndCommonCharactersOnly: Bool {
+        range(of: "[^\\p{Latin}\\p{Common}]", options: .regularExpression) == nil
+    }
 }

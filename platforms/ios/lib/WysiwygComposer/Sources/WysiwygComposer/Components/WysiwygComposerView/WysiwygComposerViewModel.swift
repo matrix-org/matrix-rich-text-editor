@@ -31,13 +31,13 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         let textView = WysiwygTextView()
         textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
         textView.mentionDisplayHelper = mentionDisplayHelper
-        textView.apply(attributedContent)
+        textView.apply(attributedContent, committed: &committedAttributedText)
         return textView
     }() {
         didSet {
             textView.linkTextAttributes[.foregroundColor] = parserStyle.linkColor
             textView.mentionDisplayHelper = mentionDisplayHelper
-            textView.apply(attributedContent)
+            textView.apply(attributedContent, committed: &committedAttributedText)
         }
     }
         
@@ -135,7 +135,18 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
     }
 
     private(set) var hasPendingFormats = false
-
+    
+    /// This is used to track the text commited to the editor by the user, as opposed to text
+    /// that could be in the editor that is not yet committed (e.g. from inline predictive text or dictation ).
+    private lazy var committedAttributedText = NSAttributedString(string: "", attributes: defaultTextAttributes)
+    
+    private var lastReplaceTextUpdate: ReplaceTextUpdate?
+    
+    /// Wether the view contains uncommitted text(e.g. a predictive suggestion is shown in grey).
+    private var hasUncommitedText: Bool {
+        textView.attributedText.htmlChars.withNBSP != committedAttributedText.htmlChars.withNBSP
+    }
+    
     // MARK: - Public
 
     public init(minHeight: CGFloat = 22,
@@ -300,12 +311,22 @@ public extension WysiwygComposerViewModel {
         compressedHeight = min(maxCompressedHeight, max(minHeight, idealTextHeight))
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func replaceText(range: NSRange, replacementText: String) -> Bool {
         guard shouldReplaceText else {
             return false
         }
 
         guard !plainTextMode else {
+            return true
+        }
+        
+        let nextTextUpdate = ReplaceTextUpdate(date: Date.now, range: range, text: replacementText)
+        // This is to specifically to work around an issue when tapping on an inline predictive text suggestion within the text view.
+        // Even though we have the delegate disabled during modifications to the textview we still get some duplicate
+        // calls to this method in this case specifically. It's very unlikely we would get a valid subsequent call
+        // with the same range and replacement text within such a short period of time, so should be safe.
+        if let lastReplaceTextUpdate, lastReplaceTextUpdate.shouldDebounce(with: nextTextUpdate) {
             return true
         }
         
@@ -316,21 +337,41 @@ public extension WysiwygComposerViewModel {
         }
 
         let update: ComposerUpdate
-        let shouldAcceptChange: Bool
+        let skipTextViewUpdate: Bool
 
         if range != attributedContent.selection {
             select(range: range)
         }
-
-        if attributedContent.selection.length == 0, replacementText == "" {
+        
+        // The system handles certain auto-compelete use-cases with somewhat unusual replacementText/range
+        // combinations, some of those edge cases are handled below.
+        
+        // Are we replacing some selected text by tapping the suggestion toolbar
+        // When this happens a range/replacementText of this combination is sent.
+        let isReplacingWordWithSuggestion = replacementText == "" && !hasUncommitedText && range.length == 0
+        
+        // A no-op rte side is required here
+        if isReplacingWordWithSuggestion {
+            return true
+        }
+        
+        // Are we backspacing from an inline predictive text suggestion.
+        // When this happens a range/replacementText of this combination is sent.
+        let isExitingPredictiveText = replacementText == ""
+            && hasUncommitedText
+            && range == attributedContent.selection && range.length == 0
+        
+        let isNormalBackspace = attributedContent.selection.length == 0 && replacementText == ""
+        
+        if isNormalBackspace || isExitingPredictiveText {
             update = model.backspace()
-            shouldAcceptChange = false
+            skipTextViewUpdate = false
         } else if replacementText.count == 1, replacementText[String.Index(utf16Offset: 0, in: replacementText)].isNewline {
             update = createEnterUpdate()
-            shouldAcceptChange = false
+            skipTextViewUpdate = false
         } else {
             update = model.replaceText(newText: replacementText)
-            shouldAcceptChange = true
+            skipTextViewUpdate = true
         }
         
         // Reconciliates the model with the text any time the link state changes
@@ -340,18 +381,18 @@ public extension WysiwygComposerViewModel {
         case let .update(newState):
             if newState[.link] != actionStates[.link] {
                 applyUpdate(update, skipTextViewUpdate: true)
-                textView.apply(attributedContent)
+                applyAtributedContent()
                 updateCompressedHeightIfNeeded()
                 return false
             }
         default: break
         }
         
-        applyUpdate(update, skipTextViewUpdate: shouldAcceptChange)
-
-        return shouldAcceptChange
+        applyUpdate(update, skipTextViewUpdate: skipTextViewUpdate)
+        lastReplaceTextUpdate = nextTextUpdate
+        return skipTextViewUpdate
     }
-
+    
     func select(range: NSRange) {
         do {
             guard let text = textView.attributedText, !plainTextMode else { return }
@@ -378,13 +419,91 @@ public extension WysiwygComposerViewModel {
             }
             plainTextContent = textView.attributedText
         } else {
-            reconciliateIfNeeded()
+            let updated = updateForDoubleSpaceToDotConversionIfNeeded() || updateDotAfterInlineTextPredicationIfNeeded()
+            if !updated {
+                reconciliateIfNeeded()
+            }
             applyPendingFormatsIfNeeded()
         }
         
         updateCompressedHeightIfNeeded()
     }
     
+    /// Checks if the editor automatically replaced two spaces with a dot and reconcile with the model if it did.
+    /// - Returns: Whether the an update was applied.
+    func updateForDoubleSpaceToDotConversionIfNeeded() -> Bool {
+        let text = textView.attributedText.htmlChars.withNBSP
+        let textSelection = textView.selectedRange
+        // Check if the last character in the editor is a dot.
+        guard text.count > 1,
+              textSelection.location > 1,
+              text.prefix(textSelection.location).hasSuffix(".")
+        else {
+            return false
+        }
+        // Check if the last 2 characters before the cursor in the model are whitespace. i.e. "  |"
+        let content = attributedContent.text.htmlChars.withNBSP
+        let contentSelection = attributedContent.selection
+        guard content.count > 1,
+              contentSelection.location > 1,
+              String(content.prefix(contentSelection.location)
+                  .suffix(2))
+              .trimmingCharacters(in: .whitespaces)
+              .isEmpty
+        else {
+            return false
+        }
+        // replace the 2 whitespace characters just before and cursor with ". "
+        let replaceUpdate = model.replaceTextIn(newText: ". ",
+                                                start: UInt32(contentSelection.location - 2),
+                                                end: UInt32(contentSelection.location))
+        applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+        return true
+    }
+    
+    /// Checks if the editor automatically moved the cursor back a space when pressing a dot after
+    /// accepting an inline predictive text suggestion. It then reconciles with the model if it did.
+    /// - Returns: Whether the an update was applied.
+    func updateDotAfterInlineTextPredicationIfNeeded() -> Bool {
+        // This optimisation to predictive inline text only came in in 17.5
+        guard #available(iOS 17.5, *) else {
+            return false
+        }
+        let text = textView.attributedText.htmlChars.withNBSP
+        let textSelection = textView.selectedRange
+        // Check if the last character in the editor is a dot.
+        guard text.count > 1,
+              textSelection.location > 1,
+              text.prefix(textSelection.location).hasSuffix(".")
+        else {
+            return false
+        }
+        let content = attributedContent.text.htmlChars.withNBSP
+        let contentSelection = attributedContent.selection
+        guard content.count > 1,
+              contentSelection.location > 1,
+              contentSelection.location + 1 <= content.count
+        else {
+            return false
+        }
+        let lastTwo = content.prefix(contentSelection.location + 1).suffix(2)
+        // Check if the characters just before and after the cursor are a dot and whitespace ie " |."
+        guard lastTwo.prefix(1)
+            .trimmingCharacters(in: .whitespaces)
+            .isEmpty,
+            lastTwo.suffix(1) == "."
+        else {
+            return false
+        }
+        
+        // replace characters just before and after the cursor with a dot
+        let replaceUpdate = model.replaceTextIn(newText: ".",
+                                                start: UInt32(contentSelection.location - 1),
+                                                end: UInt32(contentSelection.location + 1))
+        applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+        return true
+    }
+
     func applyLinkOperation(_ linkOperation: WysiwygLinkOperation) {
         let update: ComposerUpdate
         switch linkOperation {
@@ -422,6 +541,10 @@ public extension WysiwygComposerViewModel {
         return CGSize(width: width,
                       height: maximised ? maxExpandedHeight : min(maxCompressedHeight, max(minHeight, idealHeight)))
     }
+    
+    func applyAtributedContent() {
+        textView.apply(attributedContent, committed: &committedAttributedText)
+    }
 }
 
 // MARK: - Private
@@ -444,8 +567,12 @@ private extension WysiwygComposerViewModel {
             applyReplaceAll(codeUnits: codeUnits, start: start, end: end)
             // Note: this makes replaceAll act like .keep on cases where we expect the text
             // view to be properly updated by the system.
-            if !skipTextViewUpdate {
-                textView.apply(attributedContent)
+            if skipTextViewUpdate {
+                // We skip updating the text view as the system did that for us but that
+                // is not reflected in committedAttributedText yet, so update it.
+                committedAttributedText = attributedContent.text
+            } else {
+                applyAtributedContent()
                 updateCompressedHeightIfNeeded()
             }
         case let .select(startUtf16Codeunit: start,
@@ -560,7 +687,7 @@ private extension WysiwygComposerViewModel {
             plainTextContent = NSAttributedString()
         }
     }
-
+    
     /// Reconciliate the content of the model with the content of the text view.
     func reconciliateIfNeeded() {
         do {
@@ -569,6 +696,13 @@ private extension WysiwygComposerViewModel {
                                                                  to: textView.attributedText.htmlChars) else {
                 return
             }
+            
+            // Don't use reconciliate if the replacement is only latin character languages
+            // as it shouldn't be needed. It is needed for CJK lanuages like Japanese Kana.
+            if replacement.text.containsLatinAndCommonCharactersOnly {
+                return
+            }
+            
             // Reconciliate
             Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
                                       functionName: #function)
@@ -588,9 +722,9 @@ private extension WysiwygComposerViewModel {
             case StringDifferError.tooComplicated,
                  StringDifferError.insertionsDontMatchRemovals:
                 // Restore from the model, as otherwise the composer will enter a broken state
-                textView.apply(attributedContent)
+                applyAtributedContent()
                 updateCompressedHeightIfNeeded()
-                Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
+                Logger.viewModel.logError(["Reconciliate failed(\(error)), content has been restored from the model"],
                                           functionName: #function)
             case AttributedRangeError.outOfBoundsAttributedIndex,
                  AttributedRangeError.outOfBoundsHtmlIndex:
@@ -607,8 +741,7 @@ private extension WysiwygComposerViewModel {
     /// to apply (e.g. we hit the bold button with no selection).
     func applyPendingFormatsIfNeeded() {
         guard hasPendingFormats else { return }
-
-        textView.apply(attributedContent)
+        applyAtributedContent()
         updateCompressedHeightIfNeeded()
         hasPendingFormats = false
     }
@@ -618,7 +751,8 @@ private extension WysiwygComposerViewModel {
     /// - Returns: A markdown string.
     func computeMarkdownContent() -> String {
         let markdownContent: String
-        if let mentionReplacer, let attributedText = textView.attributedText {
+        if let mentionReplacer,
+           let attributedText = textView.attributedText {
             // `MentionReplacer` should restore altered content to valid markdown.
             markdownContent = mentionReplacer.restoreMarkdown(in: attributedText)
         } else {
@@ -655,4 +789,19 @@ extension WysiwygComposerViewModel: ComposerModelWrapperDelegate {
 
 private extension Logger {
     static let viewModel = Logger(subsystem: subsystem, category: "ViewModel")
+}
+
+private struct ReplaceTextUpdate {
+    static let debounceThreshold = 0.1
+    var date: Date
+    var range: NSRange
+    var text: String
+}
+
+private extension ReplaceTextUpdate {
+    func shouldDebounce(with other: ReplaceTextUpdate) -> Bool {
+        range == other.range
+            && text == other.text
+            && fabs(date.timeIntervalSince(other.date)) < Self.debounceThreshold
+    }
 }
