@@ -194,6 +194,8 @@ extension WysiwygUITests {
         
         app.launch()
         textView.tap()
+        sleep(1)
+        
         setupKeyboard(keyboard)
     }
 }
