@@ -172,6 +172,7 @@ extension WysiwygUITests {
         } else {
             keyboardSelection.tap()
         }
+        sleep(2)
     }
     
     private func addKeyboardToSettings(keyboard: TestKeyboard) {
