@@ -159,37 +159,31 @@ extension WysiwygUITests {
             changeKeyboardButton = emoji
         }
         
-        // This means that there is only keyboard and no emoji keyboard setup, so we need to check the settings
         if changeKeyboardButton == nil {
-            if addKeyboardToSettings(keyboard: keyboard) {
-                changeKeyboardButton = app.buttons["Next keyboard"]
-            } else {
-                return
-            }
+            addKeyboardToSettings(keyboard: keyboard)
+            changeKeyboardButton = app.buttons["Next keyboard"]
         }
         
         changeKeyboardButton.press(forDuration: 1)
         var keyboardSelection = app.tables.staticTexts[keyboard.label]
         if !keyboardSelection.exists {
             addKeyboardToSettings(keyboard: keyboard)
-            setupKeyboard(keyboard)
+            // No need to tap since it gets selected automatically
+        } else {
+            keyboardSelection.tap()
         }
-        keyboardSelection.tap()
+        sleep(2)
     }
     
-    /// returns true if the keyboard has been added, otherwise if already present will return false
-    @discardableResult
-    private func addKeyboardToSettings(keyboard: TestKeyboard) -> Bool {
+    private func addKeyboardToSettings(keyboard: TestKeyboard) {
         let settingsApp = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
-        // In case it was already open
-        settingsApp.terminate()
         settingsApp.launch()
         
         settingsApp.tables.cells.staticTexts["General"].tap()
         settingsApp.tables.cells.staticTexts["Keyboard"].tap()
         settingsApp.tables.cells.staticTexts["Keyboards"].tap()
         if settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].exists {
-            return false
+            return
         }
         settingsApp.tables.cells.staticTexts["AddNewKeyboard"].tap()
         settingsApp.tables.cells.staticTexts[keyboard.localeIdentifier].tap()
@@ -200,7 +194,6 @@ extension WysiwygUITests {
         
         settingsApp.terminate()
         app.activate()
-        return true
     }
 }
 
