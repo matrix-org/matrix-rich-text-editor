@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Install xcresultparser
       run: brew install a7ex/homebrew-formulae/xcresultparser
 
@@ -69,7 +69,7 @@ jobs:
         flags: unittests-ios, unittests
         # https://github.com/codecov/codecov-action/issues/557#issuecomment-1216749652
         token: ${{ secrets.CODECOV_TOKEN }}
-
+      
     - name: UI test coverage
       working-directory: platforms/ios/example
       run: exec ./ios-ui-test-coverage.sh
