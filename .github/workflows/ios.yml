@@ -57,10 +57,6 @@ jobs:
       working-directory: platforms/ios/example
       run: exec ./ios-test-coverage.sh
 
-    - name: Collect coverage
-      working-directory: platforms/ios/example
-      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) tests.xcresult > tests.xml 
-
     - name: Upload unit test coverage to Codecov
       uses: codecov/codecov-action@v4
       with:
@@ -73,10 +69,6 @@ jobs:
     - name: UI test coverage
       working-directory: platforms/ios/example
       run: exec ./ios-ui-test-coverage.sh
-
-    - name: Collect coverage
-      working-directory: platforms/ios/example
-      run: xcresultparser -q -o cobertura -t Wysiwyg -p $(pwd) ui-tests.xcresult > ui-tests.xml 
 
     - name: Upload ui test coverage to Codecov
       uses: codecov/codecov-action@v4
