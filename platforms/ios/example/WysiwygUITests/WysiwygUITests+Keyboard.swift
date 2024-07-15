@@ -190,9 +190,9 @@ extension WysiwygUITests {
             settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].tap()
         }
         settingsApp.buttons["Done"].tap()
-        sleep(2)
+        sleep(10)
         settingsApp.terminate()
-        app.activate()
+        app.launch()
     }
 }
 
