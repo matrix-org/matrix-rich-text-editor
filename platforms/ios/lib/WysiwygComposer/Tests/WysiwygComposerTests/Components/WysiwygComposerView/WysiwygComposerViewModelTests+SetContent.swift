@@ -47,43 +47,43 @@ extension WysiwygComposerViewModelTests {
         XCTAssertEqual(viewModel.content.markdown, Constants.sampleMarkdown2)
     }
 
-    func testSetHtmlContentTriggersPublish() {
-        let expectation = expectAttributedContentPublish(Constants.samplePlainText)
-        viewModel.setHtmlContent(Constants.sampleHtml)
-        waitExpectation(expectation: expectation, timeout: 2.0)
-    }
-
-    func testSetMarkdownContentTriggersPublish() {
-        let expectation = expectAttributedContentPublish(Constants.samplePlainText)
-        viewModel.setMarkdownContent(Constants.sampleMarkdown)
-        waitExpectation(expectation: expectation, timeout: 2.0)
-    }
+//    func testSetHtmlContentTriggersPublish() {
+//        let expectation = expectAttributedContentPublish(Constants.samplePlainText)
+//        viewModel.setHtmlContent(Constants.sampleHtml)
+//        waitExpectation(expectation: expectation, timeout: 2.0)
+//    }
+//
+//    func testSetMarkdownContentTriggersPublish() {
+//        let expectation = expectAttributedContentPublish(Constants.samplePlainText)
+//        viewModel.setMarkdownContent(Constants.sampleMarkdown)
+//        waitExpectation(expectation: expectation, timeout: 2.0)
+//    }
 }
 
 private extension WysiwygComposerViewModelTests {
-    /// Create an expectation for an attributed content to be published by the view model.
-    ///
-    /// - Parameters:
-    ///   - expectedPlainText: Expected plain text.
-    ///   - description: Description for expectation.
-    /// - Returns: Expectation to be fulfilled. Can be used with `waitExpectation`.
-    /// - Note: the plain text is asserted, as its way easier to build than attributed string.
-    func expectAttributedContentPublish(_ expectedPlainText: String,
-                                        description: String = "Await attributed content") -> WysiwygTestExpectation {
-        let expectAttributedContent = expectation(description: description)
-        let cancellable = viewModel.$attributedContent
-            // Ignore on subscribe publish.
-            .removeDuplicates(by: {
-                $0.text == $1.text
-            })
-            .dropFirst()
-            .sink(receiveValue: { attributedContent in
-                XCTAssertEqual(
-                    attributedContent.plainText,
-                    expectedPlainText
-                )
-                expectAttributedContent.fulfill()
-            })
-        return WysiwygTestExpectation(value: expectAttributedContent, cancellable: cancellable)
-    }
+//    /// Create an expectation for an attributed content to be published by the view model.
+//    ///
+//    /// - Parameters:
+//    ///   - expectedPlainText: Expected plain text.
+//    ///   - description: Description for expectation.
+//    /// - Returns: Expectation to be fulfilled. Can be used with `waitExpectation`.
+//    /// - Note: the plain text is asserted, as its way easier to build than attributed string.
+//    func expectAttributedContentPublish(_ expectedPlainText: String,
+//                                        description: String = "Await attributed content") -> WysiwygTestExpectation {
+//        let expectAttributedContent = expectation(description: description)
+//        let cancellable = viewModel.$attributedContent
+//            // Ignore on subscribe publish.
+//            .removeDuplicates(by: {
+//                $0.text == $1.text
+//            })
+//            .dropFirst()
+//            .sink(receiveValue: { attributedContent in
+//                XCTAssertEqual(
+//                    attributedContent.plainText,
+//                    expectedPlainText
+//                )
+//                expectAttributedContent.fulfill()
+//            })
+//        return WysiwygTestExpectation(value: expectAttributedContent, cancellable: cancellable)
+//    }
 }

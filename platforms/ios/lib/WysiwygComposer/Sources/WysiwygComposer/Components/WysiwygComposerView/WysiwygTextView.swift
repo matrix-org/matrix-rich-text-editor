@@ -116,13 +116,12 @@ public class WysiwygTextView: UITextView {
     /// - Parameters:
     ///   - content: Content to apply.
     func apply(_ content: WysiwygComposerAttributedContent) {
-        guard content.text.length == 0
-            || content.text != attributedText
-            || content.selection != selectedRange
-        else { return }
-
+//        guard content.text.length == 0
+//            || content.text != attributedText
+//            || content.selection != selectedRange
+//        else { return }
+        
         performWithoutDelegate {
-            self.attributedText = content.text
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.
             self.selectedRange = .zero

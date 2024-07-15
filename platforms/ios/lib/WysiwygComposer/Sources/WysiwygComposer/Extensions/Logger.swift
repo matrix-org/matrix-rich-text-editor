@@ -101,7 +101,7 @@ extension WysiwygComposerAttributedContent {
     }
 
     /// Returns a log ready description of the markdown text.
-    var logText: String {
-        "Text: \"\(text)\""
+    var logDom: String {
+        "Dom: \"\(dom)\""
     }
 }

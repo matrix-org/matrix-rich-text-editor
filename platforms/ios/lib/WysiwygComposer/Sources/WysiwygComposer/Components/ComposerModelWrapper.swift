@@ -181,6 +181,10 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     var reversedActions: Set<ComposerAction> {
         model.reversedActions
     }
+    
+    var dom: DomNode {
+        model.getDom()
+    }
 }
 
 // MARK: - Private

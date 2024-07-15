@@ -153,10 +153,10 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         model = ComposerModelWrapper()
         model.delegate = self
         // Publish composer empty state.
-        $attributedContent.sink { [unowned self] content in
-            isContentEmpty = content.text.length == 0 || content.plainText == "\n" // An empty <p> is left when deleting multi-line content.
-        }
-        .store(in: &cancellables)
+//        $attributedContent.sink { [unowned self] content in
+//            isContentEmpty = content.text.length == 0 || content.plainText == "\n" // An empty <p> is left when deleting multi-line content.
+//        }
+//        .store(in: &cancellables)
         
         $idealHeight
             .removeDuplicates()
@@ -378,7 +378,7 @@ public extension WysiwygComposerViewModel {
             }
             plainTextContent = textView.attributedText
         } else {
-            reconciliateIfNeeded()
+//            reconciliateIfNeeded()
             applyPendingFormatsIfNeeded()
         }
         
@@ -438,10 +438,11 @@ private extension WysiwygComposerViewModel {
     ///   - skipTextViewUpdate: A boolean indicating whether updating the text view should be skipped.
     func applyUpdate(_ update: ComposerUpdateProtocol, skipTextViewUpdate: Bool = false) {
         switch update.textUpdate() {
-        case let .replaceAll(replacementHtml: codeUnits,
+        case let .replaceAll(replacementDom: dom,
                              startUtf16Codeunit: start,
                              endUtf16Codeunit: end):
-            applyReplaceAll(codeUnits: codeUnits, start: start, end: end)
+            
+            applyReplaceAll(dom: dom, start: start, end: end)
             // Note: this makes replaceAll act like .keep on cases where we expect the text
             // view to be properly updated by the system.
             if !skipTextViewUpdate {
@@ -478,54 +479,32 @@ private extension WysiwygComposerViewModel {
     ///   - codeUnits: Array of UTF16 code units representing the current HTML.
     ///   - start: Start location for the selection.
     ///   - end: End location for the selection.
-    func applyReplaceAll(codeUnits: [UInt16], start: UInt32, end: UInt32) {
-        do {
-            let html = String(utf16CodeUnits: codeUnits, count: codeUnits.count)
-            let attributed = try HTMLParser.parse(html: html,
-                                                  style: parserStyle,
-                                                  mentionReplacer: mentionReplacer)
-            // FIXME: handle error for out of bounds index
-            let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
-            let textSelection = try attributed.attributedRange(from: htmlSelection)
-            attributedContent = WysiwygComposerAttributedContent(text: attributed,
-                                                                 selection: textSelection,
-                                                                 plainText: model.getContentAsPlainText())
-            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                       "Sel: \(htmlSelection)",
-                                       "HTML: \"\(html)\"",
-                                       "replaceAll"],
-                                      functionName: #function)
-        } catch {
-            Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
-                                       "Error: \(error.localizedDescription)",
-                                       "replaceAll"],
-                                      functionName: #function)
-        }
+    func applyReplaceAll(dom: DomNode, start: UInt32, end: UInt32) {
+        let selection = NSRange(location: Int(start), length: Int(end - start))
+        attributedContent = WysiwygComposerAttributedContent(dom: dom,
+                                                             selection: selection,
+                                                             plainText: model.getContentAsPlainText())
+        Logger.viewModel.logDebug(["Sel: \(selection)",
+                                   "Dom: \"\(dom)\"",
+                                   "replaceAll"],
+                                  functionName: #function)
     }
-
+    
     /// Apply a select update to the composer
     ///
     /// - Parameters:
     ///   - start: Start location for the selection.
     ///   - end: End location for the selection.
     func applySelect(start: UInt32, end: UInt32) {
-        do {
-            let htmlSelection = NSRange(location: Int(start), length: Int(end - start))
-            let textSelection = try attributedContent.text.attributedRange(from: htmlSelection)
-            if textSelection != attributedContent.selection {
-                attributedContent.selection = textSelection
-                // Ensure we re-apply required pending formats when switching to a zero-length selection.
-                // This fixes selecting in and out of a list / quote / etc
-                hasPendingFormats = textSelection.length == 0 && !model.reversedActions.isEmpty
-            }
-            Logger.viewModel.logDebug(["Sel(att): \(textSelection)",
-                                       "Sel: \(htmlSelection)"],
-                                      functionName: #function)
-        } catch {
-            Logger.viewModel.logError(["Sel: {\(start), \(end - start)}",
-                                       "Error: \(error.localizedDescription)"],
-                                      functionName: #function)
+        let selection = NSRange(location: Int(start), length: Int(end - start))
+        if selection != attributedContent.selection {
+            attributedContent.selection = selection
+            // Ensure we re-apply required pending formats when switching to a zero-length selection.
+            // This fixes selecting in and out of a list / quote / etc
+            hasPendingFormats = selection.length == 0 && !model.reversedActions.isEmpty
         }
+        Logger.viewModel.logDebug(["Sel: \(selection)"],
+                                  functionName: #function)
     }
     
     /// Update the composer ideal height based on the maximised state.
@@ -562,47 +541,47 @@ private extension WysiwygComposerViewModel {
     }
 
     /// Reconciliate the content of the model with the content of the text view.
-    func reconciliateIfNeeded() {
-        do {
-            guard !textView.isDictationRunning,
-                  let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
-                                                                 to: textView.attributedText.htmlChars) else {
-                return
-            }
-            // Reconciliate
-            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
-                                      functionName: #function)
-
-            let replaceUpdate = model.replaceTextIn(newText: replacement.text,
-                                                    start: UInt32(replacement.range.location),
-                                                    end: UInt32(replacement.range.upperBound))
-            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
-
-            // Resync selectedRange
-            let rustSelection = try textView.attributedText.htmlRange(from: textView.selectedRange)
-            let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
-                                            endUtf16Codeunit: UInt32(rustSelection.upperBound))
-            applyUpdate(selectUpdate)
-        } catch {
-            switch error {
-            case StringDifferError.tooComplicated,
-                 StringDifferError.insertionsDontMatchRemovals:
-                // Restore from the model, as otherwise the composer will enter a broken state
-                textView.apply(attributedContent)
-                updateCompressedHeightIfNeeded()
-                Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
-                                          functionName: #function)
-            case AttributedRangeError.outOfBoundsAttributedIndex,
-                 AttributedRangeError.outOfBoundsHtmlIndex:
-                // Just log here for now, the composer is already in a broken state
-                Logger.viewModel.logError(["Reconciliate failed due to out of bounds indexes"],
-                                          functionName: #function)
-            default:
-                break
-            }
-        }
-    }
-
+//    func reconciliateIfNeeded() {
+//        do {
+//            guard !textView.isDictationRunning,
+//                  let replacement = try StringDiffer.replacement(from: attributedContent.text.htmlChars,
+//                                                                 to: textView.attributedText.htmlChars) else {
+//                return
+//            }
+//            // Reconciliate
+//            Logger.viewModel.logDebug(["Reconciliate from \"\(attributedContent.text.string)\" to \"\(textView.text ?? "")\""],
+//                                      functionName: #function)
+//
+//            let replaceUpdate = model.replaceTextIn(newText: replacement.text,
+//                                                    start: UInt32(replacement.range.location),
+//                                                    end: UInt32(replacement.range.upperBound))
+//            applyUpdate(replaceUpdate, skipTextViewUpdate: true)
+//
+//            // Resync selectedRange
+//            let rustSelection = try textView.attributedText.htmlRange(from: textView.selectedRange)
+//            let selectUpdate = model.select(startUtf16Codeunit: UInt32(rustSelection.location),
+//                                            endUtf16Codeunit: UInt32(rustSelection.upperBound))
+//            applyUpdate(selectUpdate)
+//        } catch {
+//            switch error {
+//            case StringDifferError.tooComplicated,
+//                StringDifferError.insertionsDontMatchRemovals:
+//                // Restore from the model, as otherwise the composer will enter a broken state
+//                textView.apply(attributedContent)
+//                updateCompressedHeightIfNeeded()
+//                Logger.viewModel.logError(["Reconciliate failed, content has been restored from the model"],
+//                                          functionName: #function)
+//            case AttributedRangeError.outOfBoundsAttributedIndex,
+//                AttributedRangeError.outOfBoundsHtmlIndex:
+//                // Just log here for now, the composer is already in a broken state
+//                Logger.viewModel.logError(["Reconciliate failed due to out of bounds indexes"],
+//                                          functionName: #function)
+//            default:
+//                break
+//            }
+//        }
+//    }
+    
     /// Updates the text view with the current content if we have some pending formats
     /// to apply (e.g. we hit the bold button with no selection).
     func applyPendingFormatsIfNeeded() {

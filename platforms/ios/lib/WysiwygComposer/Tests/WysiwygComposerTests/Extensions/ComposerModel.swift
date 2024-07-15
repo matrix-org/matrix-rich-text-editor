@@ -61,6 +61,17 @@ extension ComposerModelWrapper {
         XCTAssertEqual(toTree(), tree)
         return self
     }
+    
+    /// Assert given dom matches self.
+    ///
+    /// - Parameters:
+    ///   - dom: dom to test
+    /// - Returns: self (discardable)
+    @discardableResult
+    func assertDom(_ dom: DomNode) -> ComposerModelWrapper {
+        XCTAssertTrue(self.dom.contentEquals(other: dom))
+        return self
+    }
 
     /// Assert given selection matches self.
     ///

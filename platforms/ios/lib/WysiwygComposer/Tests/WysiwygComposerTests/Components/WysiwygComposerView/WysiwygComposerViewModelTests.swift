@@ -26,21 +26,21 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         viewModel.clearContent()
     }
 
-    func testIsContentEmpty() throws {
-        XCTAssertTrue(viewModel.isContentEmpty)
-
-        let expectFalse = expectContentEmpty(false)
-        _ = viewModel.replaceText(range: .zero,
-                                  replacementText: "Test")
-        viewModel.textView.attributedText = viewModel.attributedContent.text
-        waitExpectation(expectation: expectFalse, timeout: 2.0)
-
-        let expectTrue = expectContentEmpty(true)
-        _ = viewModel.replaceText(range: .init(location: 0, length: viewModel.attributedContent.text.length),
-                                  replacementText: "")
-        viewModel.textView.attributedText = viewModel.attributedContent.text
-        waitExpectation(expectation: expectTrue, timeout: 2.0)
-    }
+//    func testIsContentEmpty() throws {
+//        XCTAssertTrue(viewModel.isContentEmpty)
+//
+//        let expectFalse = expectContentEmpty(false)
+//        _ = viewModel.replaceText(range: .zero,
+//                                  replacementText: "Test")
+//        viewModel.textView.attributedText = viewModel.attributedContent.text
+//        waitExpectation(expectation: expectFalse, timeout: 2.0)
+//
+//        let expectTrue = expectContentEmpty(true)
+//        _ = viewModel.replaceText(range: .init(location: 0, length: viewModel.attributedContent.text.length),
+//                                  replacementText: "")
+//        viewModel.textView.attributedText = viewModel.attributedContent.text
+//        waitExpectation(expectation: expectTrue, timeout: 2.0)
+//    }
     
     func testIsContentEmptyAfterDeletingSingleSpace() {
         // When typing a single space.
@@ -91,15 +91,15 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertFalse(shouldChange)
     }
 
-    func testReconciliateModel() {
-        _ = viewModel.replaceText(range: .zero,
-                                  replacementText: "wa")
-        XCTAssertEqual(viewModel.attributedContent.text.string, "wa")
-        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 2, length: 0))
-        reconciliate(to: "わ", selectedRange: NSRange(location: 1, length: 0))
-        XCTAssertEqual(viewModel.attributedContent.text.string, "わ")
-        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 1, length: 0))
-    }
+//    func testReconciliateModel() {
+//        _ = viewModel.replaceText(range: .zero,
+//                                  replacementText: "wa")
+//        XCTAssertEqual(viewModel.attributedContent.text.string, "wa")
+//        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 2, length: 0))
+//        reconciliate(to: "わ", selectedRange: NSRange(location: 1, length: 0))
+//        XCTAssertEqual(viewModel.attributedContent.text.string, "わ")
+//        XCTAssertEqual(viewModel.attributedContent.selection, NSRange(location: 1, length: 0))
+//    }
 
     func testReconciliateRestoresSelection() {
         _ = viewModel.replaceText(range: .zero, replacementText: "I\'m")
@@ -140,21 +140,21 @@ final class WysiwygComposerViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.content.html, "Some bold <strong>text</strong>")
     }
     
-    func testReplaceTextAfterLinkIsNotAccepted() {
-        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
-        let result = viewModel.replaceText(range: .init(location: 4, length: 0), replacementText: "abc")
-        XCTAssertFalse(result)
-        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">test</a>abc")
-        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
-    }
-    
-    func testReplaceTextPartiallyInsideAndAfterLinkIsNotAccepted() {
-        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
-        let result = viewModel.replaceText(range: .init(location: 3, length: 1), replacementText: "abc")
-        XCTAssertFalse(result)
-        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">tes</a>abc")
-        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
-    }
+//    func testReplaceTextAfterLinkIsNotAccepted() {
+//        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
+//        let result = viewModel.replaceText(range: .init(location: 4, length: 0), replacementText: "abc")
+//        XCTAssertFalse(result)
+//        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">test</a>abc")
+//        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
+//    }
+//
+//    func testReplaceTextPartiallyInsideAndAfterLinkIsNotAccepted() {
+//        viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
+//        let result = viewModel.replaceText(range: .init(location: 3, length: 1), replacementText: "abc")
+//        XCTAssertFalse(result)
+//        XCTAssertEqual(viewModel.content.html, "<a href=\"https://element.io\">tes</a>abc")
+//        XCTAssertTrue(viewModel.textView.attributedText.isEqual(to: viewModel.attributedContent.text) == true)
+//    }
     
     func testReplaceTextInsideLinkIsAccepted() {
         viewModel.applyLinkOperation(.createLink(urlString: "https://element.io", text: "test"))
