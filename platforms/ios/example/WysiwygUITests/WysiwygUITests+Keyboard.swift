@@ -16,14 +16,12 @@
 
 import XCTest
 
-// These tests work on the assunmption that we always have the software keyboard enabled
-// which is handled through the run script
-// and that the simulator is configured with the following 2 keyboards: English (US) and Japanese Kana
-// Such configuration is done through a script called ios-keyboard-setup.sh but can also be done manually
+// These tests work on the assunmption that we always have the software keyboard enabled which is handled through a build phase run script.
+// The following tests may also require specific keyboard languages that will be automatically added if needed.
 extension WysiwygUITests {
     func testInlinePredictiveText() {
-        sleep(3)
-//        app.setupKeyboardLanguage(named: "English (US)")
+        sleep(1)
+        setupKeyboard(.englishQWERTY)
         
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -46,8 +44,8 @@ extension WysiwygUITests {
     }
     
     func testInlinePredictiveTextIsIgnoredWhenSending() {
-        sleep(3)
-//        app.setupKeyboardLanguage(named: "English (US)")
+        sleep(1)
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -66,8 +64,8 @@ extension WysiwygUITests {
     }
     
     func testInlinePredictiveTextIsIgnoredWhenDeleting() {
-        sleep(3)
-//        app.setupKeyboardLanguage(named: "English (US)")
+        sleep(1)
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -87,8 +85,8 @@ extension WysiwygUITests {
     }
     
     func testDoubleSpaceIntoDot() {
-        sleep(3)
-//        app.setupKeyboardLanguage(named: "English (US)")
+        sleep(1)
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -104,8 +102,8 @@ extension WysiwygUITests {
     }
     
     func testDotAfterInlinePredictiveText() {
-        sleep(3)
-//        app.setupKeyboardLanguage(named: "English (US)")
+        sleep(1)
+        setupKeyboard(.englishQWERTY)
 
         // Sometimes autocorrection can break capitalisation, so we need to make sure the first letter is lowercase
         app.keyboards.buttons["shift"].tap()
@@ -133,21 +131,76 @@ extension WysiwygUITests {
         )
     }
     
-//    func testJapaneseKanaDeletion() {
-//        sleep(3)
-//        app.setupKeyboardLanguage(named: "日本語かな")
-//
-//        app.typeTextCharByCharUsingKeyboard("は")
-//        assertTextViewContent("は")
-//        assertTreeEquals(
-//            """
-//            └>"は"
-//            """
-//        )
-//        app.keys["delete"].tap()
-//        assertTextViewContent("")
-//        XCTAssertEqual(staticText(.treeText).label, "\n")
-//    }
+    func testJapaneseKanaDeletion() {
+        sleep(1)
+        setupKeyboard(.japaneseKana)
+
+        app.typeTextCharByCharUsingKeyboard("は")
+        assertTextViewContent("は")
+        assertTreeEquals(
+            """
+            └>"は"
+            """
+        )
+        app.keys["delete"].tap()
+        assertTextViewContent("")
+        XCTAssertEqual(staticText(.treeText).label, "\n")
+    }
+    
+    private func setupKeyboard(_ keyboard: TestKeyboard) {
+        var changeKeyboardButton: XCUIElement!
+        // If only 1 language + emoji keyboards are present the emoji button is used to change language
+        // otherwise the button next keyboard button will be present instead
+        let nextKeyboard = app.buttons["Next keyboard"]
+        let emoji = app.buttons["Emoji"]
+        if nextKeyboard.exists {
+            changeKeyboardButton = nextKeyboard
+        } else if emoji.exists {
+            changeKeyboardButton = emoji
+        }
+        
+        // This means that there is only keyboard and no emoji keyboard setup, so we need to check the settings
+        if changeKeyboardButton == nil {
+            if addKeyboardToSettings(keyboard: keyboard) {
+                changeKeyboardButton = app.buttons["Next keyboard"]
+            } else {
+                return
+            }
+        }
+        
+        changeKeyboardButton.press(forDuration: 1)
+        var keyboardSelection = app.tables.staticTexts[keyboard.label]
+        if !keyboardSelection.exists {
+            addKeyboardToSettings(keyboard: keyboard)
+            // No need to tap since it gets selected automatically
+        } else {
+            keyboardSelection.tap()
+        }
+    }
+    
+    /// returns true if the keyboard has been added, otherwise if already present will return false 
+    @discardableResult
+    private func addKeyboardToSettings(keyboard: TestKeyboard) -> Bool {
+        let settingsApp = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+        settingsApp.launch()
+        
+        settingsApp.tables.cells.staticTexts["General"].tap()
+        settingsApp.tables.cells.staticTexts["Keyboard"].tap()
+        settingsApp.tables.cells.staticTexts["Keyboards"].tap()
+        if settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].exists {
+            return false
+        }
+        settingsApp.tables.cells.staticTexts["AddNewKeyboard"].tap()
+        settingsApp.tables.cells.staticTexts[keyboard.localeIdentifier].tap()
+        if keyboard.hasSubSelection {
+            settingsApp.tables.cells.staticTexts[keyboard.keyboardIdentifier].tap()
+        }
+        settingsApp.buttons["Done"].tap()
+        
+        settingsApp.terminate()
+        app.activate()
+        return true
+    }
 }
 
 private extension XCUIApplication {
@@ -160,13 +213,45 @@ private extension XCUIApplication {
             keys[String(char)].tap()
         }
     }
+}
+
+private enum TestKeyboard {
+    case englishQWERTY
+    case japaneseKana
     
-    func setupKeyboardLanguage(named language: String) {
-        let nextKeyboard = buttons["Next keyboard"]
-        while let value = nextKeyboard.value as? String,
-              value != language {
-            nextKeyboard.tap()
+    var keyboardIdentifier: String {
+        switch self {
+        case .englishQWERTY:
+            return "en_US@sw=QWERTY;hw=Automatic"
+        case .japaneseKana:
+            return "ja_JP-Kana@sw=Kana;hw=Automatic"
         }
-        nextKeyboard.tap()
+    }
+    
+    var localeIdentifier: String {
+        switch self {
+        case .englishQWERTY:
+            return "en_US"
+        case .japaneseKana:
+            return "ja_JP"
+        }
+    }
+    
+    var label: String {
+        switch self {
+        case .englishQWERTY:
+            return "English (US)"
+        case .japaneseKana:
+            return "日本語かな"
+        }
+    }
+    
+    var hasSubSelection: Bool {
+        switch self {
+        case .englishQWERTY:
+            return false
+        case .japaneseKana:
+            return true
+        }
     }
 }
