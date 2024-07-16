@@ -101,7 +101,8 @@ extension WysiwygUITests {
         )
     }
     
-    func testDotAfterInlinePredictiveText() {
+    // This test only works on a real device, but not on simulator
+    func disabled_testDotAfterInlinePredictiveText() {
         sleep(1)
         setupKeyboard(.englishQWERTY)
 

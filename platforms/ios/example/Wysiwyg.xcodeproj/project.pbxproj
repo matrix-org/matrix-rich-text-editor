@@ -283,7 +283,6 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A6472CD12886CF840021A0E8 /* Build configuration list for PBXNativeTarget "WysiwygUITests" */;
 			buildPhases = (
-				A75C6AD32C3ECA450096D3A4 /* Force software keyboard on simulator */,
 				A6472CBD2886CF840021A0E8 /* Sources */,
 				A6472CBE2886CF840021A0E8 /* Frameworks */,
 				A6472CBF2886CF840021A0E8 /* Resources */,
@@ -395,24 +394,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin\"\nif which swiftformat >/dev/null; then\n    swiftformat $PROJECT_DIR\n    swiftformat ../lib/WysiwygComposer\nelse\n    echo \"warning: SwiftFormat not installed, download from https://github.com/nicklockwood/SwiftFormat\"\nfi\n";
-		};
-		A75C6AD32C3ECA450096D3A4 /* Force software keyboard on simulator */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Force software keyboard on simulator";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "external_kb_connected=false\n\nosascript -e 'quit app \"Simulator\"'\n\nSIMUS_KEYBOARD=$(/usr/libexec/PlistBuddy -c \"Print :DevicePreferences\" ~/Library/Preferences/com.apple.iphonesimulator.plist | perl -lne 'print $1 if /^    (\\S*) =/')\n\necho \"$SIMUS_KEYBOARD\" | while read -r a; do /usr/libexec/PlistBuddy -c \"Set :DevicePreferences:$a:ConnectHardwareKeyboard $external_kb_connected\" ~/Library/Preferences/com.apple.iphonesimulator.plist || /usr/libexec/PlistBuddy -c  \"Add :DevicePreferences:$a:ConnectHardwareKeyboard bool $external_kb_connected\" ~/Library/Preferences/com.apple.iphonesimulator.plist; done\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
