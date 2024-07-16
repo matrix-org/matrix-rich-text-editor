@@ -2,28 +2,17 @@
 
 GENERATION_PATH=.generated/ios
 
-UNIFFI_CONFIG_FILE_PATH=bindings/wysiwyg-ffi/uniffi.toml
-
 ARM64_LIB_PATH=target/aarch64-apple-ios/release/libuniffi_wysiwyg_composer.a
 ARM64_SIM_LIB_PATH=target/aarch64-apple-ios-sim/release/libuniffi_wysiwyg_composer.a
 X86_LIB_PATH=target/x86_64-apple-ios/release/libuniffi_wysiwyg_composer.a
 SIM_LIB_PATH=target/ios-simulator/libuniffi_wysiwyg_composer.a
 
 IOS_PATH=platforms/ios
-TOOLS_PATH="${IOS_PATH}/tools"
 
 SWIFT_PACKAGE_PATH="${IOS_PATH}/lib/WysiwygComposer"
 SWIFT_BINDINGS_FILE_PATH="${SWIFT_PACKAGE_PATH}/Sources/WysiwygComposer/WysiwygComposer.swift"
 
 XCFRAMEWORK_PATH="${SWIFT_PACKAGE_PATH}/WysiwygComposerFFI.xcframework"
-XCFRAMEWORK_SIM_PATH="${XCFRAMEWORK_PATH}/ios-arm64_x86_64-simulator/WysiwygComposerFFI.framework"
-XCFRAMEWORK_SIM_HEADERS_PATH="${XCFRAMEWORK_SIM_PATH}/Headers"
-XCFRAMEWORK_SIM_MODULES_PATH="${XCFRAMEWORK_SIM_PATH}/Modules"
-XCFRAMEWORK_SIM_LIBRARY_PATH="${XCFRAMEWORK_SIM_PATH}/WysiwygComposerFFI"
-XCFRAMEWORK_ARM64_PATH="${XCFRAMEWORK_PATH}/ios-arm64/WysiwygComposerFFI.framework"
-XCFRAMEWORK_ARM64_HEADERS_PATH="${XCFRAMEWORK_ARM64_PATH}/Headers"
-XCFRAMEWORK_ARM64_MODULES_PATH="${XCFRAMEWORK_ARM64_PATH}/Modules"
-XCFRAMEWORK_ARM64_LIBRARY_PATH="${XCFRAMEWORK_ARM64_PATH}/WysiwygComposerFFI"
 
 # Build libraries for all platforms
 cargo build -p uniffi-wysiwyg-composer --release --target aarch64-apple-ios --target aarch64-apple-ios-sim --target x86_64-apple-ios
@@ -57,28 +46,8 @@ mv "${GENERATION_PATH}/WysiwygComposer.swift" $SWIFT_BINDINGS_FILE_PATH
 sed -i "" -e '1h;2,$H;$!d;g' -e 's/) -> ComposerUpdate {\n        return try! FfiConverterTypeComposerUpdate.lift(\n            try!/) throws -> ComposerUpdate {\n        return try FfiConverterTypeComposerUpdate.lift(\n            try/g' $SWIFT_BINDINGS_FILE_PATH
 sed -i "" -e '1h;2,$H;$!d;g' -e 's/) -> ComposerUpdate/) throws -> ComposerUpdate/g' $SWIFT_BINDINGS_FILE_PATH
 
-# Create xcframework hierarchy
-mkdir -p $XCFRAMEWORK_SIM_HEADERS_PATH
-mkdir $XCFRAMEWORK_SIM_MODULES_PATH
-mkdir -p $XCFRAMEWORK_ARM64_HEADERS_PATH
-mkdir $XCFRAMEWORK_ARM64_MODULES_PATH
-
-# Copy/move files to expected locations
-#
-# Note: this and the hierarchy created above are actually
-# replacing the call to xcodebuild's create-xcframework because
-# it doesn't build up the hierarchy in a way that would avoid
-# conflicts between multiple Rust libraries imported into the same
-# hosting application. This does, because .framework objects
-# have their own directory in DerivedData, whereas root headers
-# directory module.modulemap files tend to conflict with each other
-# as Xcode blindly moves them all to the same include folder.
-mv $ARM64_LIB_PATH $XCFRAMEWORK_ARM64_LIBRARY_PATH
-mv $SIM_LIB_PATH $XCFRAMEWORK_SIM_LIBRARY_PATH
-cp ${GENERATION_PATH}/*.h $XCFRAMEWORK_SIM_HEADERS_PATH
-mv ${GENERATION_PATH}/*.h $XCFRAMEWORK_ARM64_HEADERS_PATH
-cp "${TOOLS_PATH}/Framework-Info.plist" "${XCFRAMEWORK_SIM_PATH}/Info.plist"
-cp "${TOOLS_PATH}/Framework-Info.plist" "${XCFRAMEWORK_ARM64_PATH}/Info.plist"
-cp "${TOOLS_PATH}/XCFramework-Info.plist" "${XCFRAMEWORK_PATH}/Info.plist"
-cp "${TOOLS_PATH}/module.modulemap" $XCFRAMEWORK_SIM_MODULES_PATH
-cp "${TOOLS_PATH}/module.modulemap" $XCFRAMEWORK_ARM64_MODULES_PATH
+# Making this directory is required to not have conflicts with other FFI generated xcframeworks.
+mkdir $GENERATION_PATH/WysiwygComposerFFI
+mv ${GENERATION_PATH}/WysiwygComposerFFI.modulemap ${GENERATION_PATH}/WysiwygComposerFFI/module.modulemap
+mv ${GENERATION_PATH}/*.h ${GENERATION_PATH}/WysiwygComposerFFI
+xcodebuild -create-xcframework -library $ARM64_LIB_PATH -headers $GENERATION_PATH -library $SIM_LIB_PATH -headers $GENERATION_PATH -output $XCFRAMEWORK_PATH
