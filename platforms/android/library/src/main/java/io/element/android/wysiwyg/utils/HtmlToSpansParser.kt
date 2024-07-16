@@ -4,17 +4,16 @@ import android.graphics.Typeface
 import android.text.Editable
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.text.style.ParagraphStyle
 import android.text.style.StrikethroughSpan
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
-import androidx.core.text.getSpans
+import androidx.core.text.buildSpannedString
+import androidx.core.text.inSpans
 import io.element.android.wysiwyg.BuildConfig
 import io.element.android.wysiwyg.display.MentionDisplayHandler
 import io.element.android.wysiwyg.display.TextDisplay
 import io.element.android.wysiwyg.view.StyleConfig
 import io.element.android.wysiwyg.view.models.InlineFormat
-import io.element.android.wysiwyg.view.spans.BlockSpan
 import io.element.android.wysiwyg.view.spans.CodeBlockSpan
 import io.element.android.wysiwyg.view.spans.CustomMentionSpan
 import io.element.android.wysiwyg.view.spans.ExtraCharacterSpan
@@ -25,12 +24,9 @@ import io.element.android.wysiwyg.view.spans.PillSpan
 import io.element.android.wysiwyg.view.spans.PlainAtRoomMentionDisplaySpan
 import io.element.android.wysiwyg.view.spans.QuoteSpan
 import io.element.android.wysiwyg.view.spans.UnorderedListSpan
-import org.ccil.cowan.tagsoup.Parser
-import org.xml.sax.Attributes
-import org.xml.sax.ContentHandler
-import org.xml.sax.InputSource
-import org.xml.sax.Locator
-import java.io.StringReader
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import org.jsoup.nodes.TextNode
 import kotlin.math.roundToInt
 
 /**
@@ -46,310 +42,171 @@ internal class HtmlToSpansParser(
     private val styleConfig: StyleConfig,
     private val mentionDisplayHandler: MentionDisplayHandler?,
     private val isMention: ((text: String, url: String) -> Boolean)? = null,
-) : ContentHandler {
-
+) {
     /**
-     * Class used to hold information about what spans should be added to the text, keeping the
-     * natural order of insertion that would otherwise be broken by the parsing order.
+     * Convert the HTML string into a [Spanned] text.
      */
-    private class PendingSpan<T : Any>(
-        val span: T,
-        val start: Int,
-        val end: Int,
-        val flags: Int,
-        val isPlaceholder: Boolean,
-    )
-
-    // Spans created to be used as 'marks' while parsing
-    private sealed interface PlaceholderSpan {
-        data class Hyperlink(val link: String, val data: Map<String, String>) : PlaceholderSpan
-        sealed interface ListBlock : PlaceholderSpan {
-            class Ordered : ListBlock
-            class Unordered : ListBlock
-        }
-
-        class CodeBlock : PlaceholderSpan
-        class Quote : PlaceholderSpan
-        class Paragraph : BlockSpan, PlaceholderSpan
-        data class ListItem(
-            val ordered: Boolean, val order: Int? = null
-        ) : BlockSpan, PlaceholderSpan
-    }
-
-    /**
-     * Child tags are parsed before their parents, causing them to be added to the [text]
-     * also in reversed order.
-     * In example, in:
-     * ```
-     * <li><blockquote>text</blockquote></li>
-     * ```
-     * The `blockquote` tag will be parsed and its span will be added first to the text, then the
-     * `li` one will be parsed and its span will be added. However, as they were added in reversed
-     * order (`quote > li` instead of `li > quote`), it will appear as a list item inside a quote
-     * when Android renders the resulting text.
-     *
-     * To fix that, we're creating this list of Spans to be added to the text:
-     * 1. When we parse the start tag, we set a placeholder span to 'book' the position.
-     * 2. When we parse the end tag, we replace that placeholder with the real span, keeping the
-     * starting position.
-     * 3. Once we've parsed the whole HTML, we apply these spans to the text in order.
-     *
-     * *Note*: this is only needed for block spans, as inline spans can be rendered in any order.
-     */
-    private val spansToAdd = mutableListOf<PendingSpan<*>>()
-
-    private val parser = Parser().also { it.contentHandler = this }
-    private val text = SpannableStringBuilder()
-
     fun convert(): Spanned {
-        spansToAdd.clear()
-        parser.parse(InputSource(StringReader(html)))
-        if (text.isNotEmpty()) {
-            for (spanToAdd in spansToAdd) {
-                val start = spanToAdd.start.coerceIn(0, text.length)
-                val end = spanToAdd.end.coerceIn(0, text.length)
-                text.setSpan(spanToAdd.span, start, end, spanToAdd.flags)
-            }
-            text.removePlaceholderSpans()
-            text.addAtRoomSpans()
+        val dom = Jsoup.parse(html)
+        val text = buildSpannedString {
+            val body = dom.body()
+            parseChildren(body)
+            addAtRoomSpans()
         }
         if (BuildConfig.DEBUG) text.assertOnlyAllowedSpans()
         return text
     }
 
-    override fun setDocumentLocator(locator: Locator?) {}
-
-    override fun startDocument() {}
-
-    override fun endDocument() {}
-
-    override fun startPrefixMapping(prefix: String?, uri: String?) {}
-
-    override fun endPrefixMapping(prefix: String?) {}
-
-    override fun startElement(uri: String?, localName: String, qName: String?, atts: Attributes?) {
-        handleStartTag(localName, atts)
-    }
-
-    override fun endElement(uri: String?, localName: String, qName: String?) {
-        handleEndTag(localName)
-    }
-
-    override fun characters(ch: CharArray, start: Int, length: Int) {
-        for (i in start until start + length) {
-            val char = ch[i]
-            text.append(char)
-        }
-    }
-
-    override fun ignorableWhitespace(ch: CharArray, start: Int, length: Int) {}
-
-    override fun processingInstruction(target: String?, data: String?) {}
-
-    override fun skippedEntity(name: String?) {}
-
-    private fun handleStartTag(name: String, attrs: Attributes?) {
-        when (name) {
-            "b", "strong" -> handleFormatStartTag(InlineFormat.Bold)
-            "i", "em" -> handleFormatStartTag(InlineFormat.Italic)
-            "u" -> handleFormatStartTag(InlineFormat.Underline)
-            "del" -> handleFormatStartTag(InlineFormat.StrikeThrough)
-            "code" -> {
-                if (getLastPending<PlaceholderSpan.CodeBlock>() != null) return
-                handleFormatStartTag(InlineFormat.InlineCode)
-            }
-
-            "a" -> {
-                val url = attrs?.getValue("href") ?: return
-                val data = buildMap<String, String> {
-                    for (i in 0..attrs.length) {
-                        val key = attrs.getLocalName(i) ?: continue
-                        set(key, attrs.getValue(i))
-                    }
-                }
-                handleHyperlinkStart(url, data)
-            }
-
-            "ul", "ol" -> {
-                addLeadingLineBreakIfNeeded(text.length)
-                val mark: PlaceholderSpan = if (name == "ol") {
-                    PlaceholderSpan.ListBlock.Ordered()
-                } else {
-                    PlaceholderSpan.ListBlock.Unordered()
-                }
-                addPlaceHolderSpan(mark)
-            }
-
-            "li" -> {
-                addLeadingLineBreakIfNeeded(text.length)
-                val lastListBlock = getLastPending<PlaceholderSpan.ListBlock>() ?: return
-                val start = text.getSpanStart(lastListBlock)
-                val newItem = when (lastListBlock.span) {
-                    is PlaceholderSpan.ListBlock.Ordered -> {
-                        val lastListItem = spansToAdd.findLast {
-                            it.span is OrderedListSpan && it.start >= start
-                        }?.span as? OrderedListSpan
-                        val order = (lastListItem?.order ?: 0) + 1
-                        PlaceholderSpan.ListItem(true, order)
-                    }
-
-                    is PlaceholderSpan.ListBlock.Unordered -> PlaceholderSpan.ListItem(false)
-                }
-                addPlaceHolderSpan(newItem)
-            }
-
-            "pre" -> {
-                addLeadingLineBreakIfNeeded(text.length)
-                val placeholder = PlaceholderSpan.CodeBlock()
-                addPlaceHolderSpan(placeholder)
-            }
-
-            "blockquote" -> {
-                addLeadingLineBreakIfNeeded(text.length)
-                val placeholder = PlaceholderSpan.Quote()
-                addPlaceHolderSpan(placeholder)
-            }
-
-            "p" -> {
-                addLeadingLineBreakIfNeeded(text.length)
-                val placeholder = PlaceholderSpan.Paragraph()
-                addPlaceHolderSpan(placeholder)
+    private fun SpannableStringBuilder.parseChildren(element: Element) {
+        for (child in element.childNodes()) {
+            when (child) {
+                is Element -> parseElement(child)
+                is TextNode -> parseTextNode(child)
             }
         }
     }
 
-    private fun handleEndTag(name: String) {
-        when (name) {
-            "br" -> {
-                addLeadingLineBreakIfNeeded(text.length)
-                text.append("\n")
-            }
-
-            "b", "strong" -> handleFormatEndTag(InlineFormat.Bold)
-            "i", "em" -> handleFormatEndTag(InlineFormat.Italic)
-            "u" -> handleFormatEndTag(InlineFormat.Underline)
-            "del" -> handleFormatEndTag(InlineFormat.StrikeThrough)
-            "code" -> handleFormatEndTag(InlineFormat.InlineCode)
-            "a" -> handleHyperlinkEnd()
-            "li" -> {
-                val last = getLastPending<PlaceholderSpan.ListItem>() ?: return
-                val start = last.start
-
-                handleNbspInBlock(start)
-
-                val span = createListSpan(last = last.span)
-                replacePlaceholderWithPendingSpan(
-                    placeholder = last.span,
-                    span = span,
-                    start = start,
-                    flags = Spanned.SPAN_EXCLUSIVE_INCLUSIVE
-                )
-            }
-
-            "pre" -> {
-                val last = getLastPending<PlaceholderSpan.CodeBlock>() ?: return
-                val start = last.start
-
-                handleNbspInBlock(start)
-                for (i in start + 1 until text.length) {
-                    if (text[i] == NBSP) {
-                        // Extra char to properly render empty new lines in code blocks
-                        handleNbspInBlock(i)
-                    }
-                }
-
-                val codeSpan = CodeBlockSpan(
-                    leadingMargin = styleConfig.codeBlock.leadingMargin,
-                    verticalPadding = styleConfig.codeBlock.verticalPadding,
-                    relativeSizeProportion = styleConfig.codeBlock.relativeTextSize,
-                )
-                replacePlaceholderWithPendingSpan(
-                    placeholder = last.span,
-                    span = codeSpan,
-                    start = start,
-                    flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-
-            "blockquote" -> {
-                val last = getLastPending<PlaceholderSpan.Quote>() ?: return
-                val start = last.start
-
-                handleNbspInBlock(start)
-
-                val quoteSpan = QuoteSpan(
-                    indicatorColor = 0xC0A0A0A0.toInt(),
-                    indicatorWidth = 4.dpToPx().toInt(),
-                    indicatorPadding = 6.dpToPx().toInt(),
-                    margin = 10.dpToPx().toInt(),
-                )
-                replacePlaceholderWithPendingSpan(
-                    placeholder = last.span,
-                    span = quoteSpan,
-                    start = start,
-                    flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-
-            "p" -> {
-                val last = getLastPending<PlaceholderSpan.Paragraph>() ?: return
-                val start = last.start
-
-                handleNbspInBlock(start)
-
-                replacePlaceholderWithPendingSpan(
-                    placeholder = last.span, start = start, flags = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
+    private fun SpannableStringBuilder.parseElement(element: Element) {
+        when (element.tagName()) {
+            "a" -> parseLink(element)
+            "b", "strong" -> parseInlineFormatting(element, InlineFormat.Bold)
+            "i", "em" -> parseInlineFormatting(element, InlineFormat.Italic)
+            "u" -> parseInlineFormatting(element, InlineFormat.Underline)
+            "del" -> parseInlineFormatting(element, InlineFormat.StrikeThrough)
+            "code" -> parseInlineCode(element)
+            "ul", "ol" -> parseChildren(element)
+            "li" -> parseListItem(element)
+            "pre" -> parseCodeBlock(element)
+            "blockquote" -> parseQuote(element)
+            "p" -> parseParagraph(element)
+            "br" -> parseLineBreak(element)
         }
     }
 
     // region: Handle parsing of tags into spans
 
-    private fun handleFormatStartTag(format: InlineFormat) {
-        addPlaceHolderSpan(format)
+    private fun SpannableStringBuilder.parseTextNode(child: TextNode) {
+        val text = child.wholeText
+        if (text.isEmpty()) return
+
+        val previousSibling = child.previousSibling() as? Element
+        if (previousSibling != null && previousSibling.isBlock) {
+            append('\n')
+        }
+        append(text)
     }
 
-    private fun handleFormatEndTag(format: InlineFormat) {
-        val last = getLastPending(format::class.java) ?: return
-        val span: Any = when (format) {
+    private fun SpannableStringBuilder.parseInlineFormatting(element: Element, inlineFormat: InlineFormat) {
+        val span = when (inlineFormat) {
             InlineFormat.Bold -> StyleSpan(Typeface.BOLD)
             InlineFormat.Italic -> StyleSpan(Typeface.ITALIC)
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
-            InlineFormat.InlineCode -> InlineCodeSpan(
-                relativeSizeProportion = styleConfig.inlineCode.relativeTextSize
-            )
+            InlineFormat.InlineCode -> return
         }
-        replacePlaceholderWithPendingSpan(
-            last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        inSpans(span) {
+            parseChildren(element)
+        }
     }
 
-    private fun handleHyperlinkStart(url: String, data: Map<String, String>) {
-        val hyperlink = PlaceholderSpan.Hyperlink(url, data)
-        addPlaceHolderSpan(hyperlink)
+    private fun SpannableStringBuilder.parseLineBreak(element: Element) {
+        if (element.previousElementSibling()?.isBlock == true) {
+            append('\n')
+        }
+        append('\n')
     }
 
-    private fun handleHyperlinkEnd() {
-        val last = getLastPending<PlaceholderSpan.Hyperlink>() ?: return
-        val url = last.span.link
-        val innerText = text.subSequence(last.start, text.length).toString()
+    private fun SpannableStringBuilder.parseParagraph(element: Element) {
+        addLeadingLineBreakForBlockNode(element)
+        val start = this.length
+        parseChildren(element)
+        handleNbspInBlock(element, start, length)
+    }
 
-        // Invalid mention, it's not mapped to any text
+    private fun SpannableStringBuilder.parseQuote(element: Element) {
+        addLeadingLineBreakForBlockNode(element)
+        val start = this.length
+        inSpans(
+            QuoteSpan(
+                // TODO provide these values from the style config
+                indicatorColor = 0xC0A0A0A0.toInt(),
+                indicatorWidth = 4.dpToPx().toInt(),
+                indicatorPadding = 6.dpToPx().toInt(),
+                margin = 10.dpToPx().toInt(),
+            )
+        ) {
+            parseChildren(element)
+        }
+
+        handleNbspInBlock(element, start, length)
+    }
+
+    private fun SpannableStringBuilder.parseCodeBlock(element: Element) {
+        addLeadingLineBreakForBlockNode(element)
+        val start = this.length
+        inSpans(
+            CodeBlockSpan(
+                leadingMargin = styleConfig.codeBlock.leadingMargin,
+                verticalPadding = styleConfig.codeBlock.verticalPadding,
+                relativeSizeProportion = styleConfig.codeBlock.relativeTextSize,
+            )
+        ) {
+            append(element.wholeText())
+        }
+
+        handleNbspInBlock(element, start, length)
+        // Handle NBSPs for new lines inside the preformatted text
+        for (i in start + 1 until length) {
+            if (this[i] == NBSP) {
+                setSpan(ExtraCharacterSpan(), i, i + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            }
+        }
+    }
+
+    private fun SpannableStringBuilder.parseListItem(element: Element) {
+        val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
+        val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
+
+        val listParent = element.parents().find { it.tagName() == "ul" || it.tagName() == "ol" }
+        val span = when (listParent?.tagName()) {
+            "ul" -> UnorderedListSpan(gapWidth, bulletRadius)
+            "ol" -> {
+                val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
+                val textSize = 16.dpToPx()
+                val order = (element.parent()?.select("li")?.indexOf(element) ?: 0) + 1
+                OrderedListSpan(typeface, textSize, order, gapWidth)
+            }
+
+            else -> return
+        }
+        addLeadingLineBreakForBlockNode(element)
+        inSpans(span) {
+            parseChildren(element)
+        }
+    }
+
+    private fun SpannableStringBuilder.parseInlineCode(element: Element) {
+        if (element.parents().none { it.tagName() == "pre" }) {
+            inSpans(InlineCodeSpan(relativeSizeProportion = styleConfig.inlineCode.relativeTextSize)) {
+                parseChildren(element)
+            }
+        } else {
+            parseChildren(element)
+        }
+    }
+
+    private fun SpannableStringBuilder.parseLink(element: Element) {
+        val start = this.length
+        val innerText = element.text()
         if (innerText.isEmpty()) return
 
-        val isMention = isMention?.invoke(innerText, url) == true ||
-                last.span.data.containsKey("data-mention-type")
-
-        // If the link is a mention, tag all but the first character of the anchor text with
-        // ExtraCharacterSpans. These characters will then be taken into account when translating
-        // between editor and composer model indices (see [EditorIndexMapper]).
-        if (isMention && text.length > 1) {
-            addPendingSpan(
-                ExtraCharacterSpan(), last.start + 1, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
+        val url = element.attr("href") ?: return
+        val data = buildMap<String, String> {
+            for (attr in element.attributes()) {
+                set(attr.key, attr.value)
+            }
         }
+        val isMention = isMention?.invoke(innerText, url) == true || data.containsKey("data-mention-type")
 
         val textDisplay = if (isMention) {
             mentionDisplayHandler?.resolveMentionDisplay(innerText, url) ?: TextDisplay.Plain
@@ -357,43 +214,25 @@ internal class HtmlToSpansParser(
             TextDisplay.Plain
         }
 
-        when (textDisplay) {
-            is TextDisplay.Custom -> {
-                val span = CustomMentionSpan(textDisplay.customSpan, url)
-                replacePlaceholderWithPendingSpan(
-                    last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-
+        val span = when (textDisplay) {
+            is TextDisplay.Custom ->  CustomMentionSpan(textDisplay.customSpan, url)
             TextDisplay.Pill -> {
                 val pillBackground = styleConfig.pill.backgroundColor
-                val span = PillSpan(pillBackground, url)
-                replacePlaceholderWithPendingSpan(
-                    last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
+                PillSpan(pillBackground, url)
             }
-
-            TextDisplay.Plain -> {
-                val span = LinkSpan((last.span).link)
-                replacePlaceholderWithPendingSpan(
-                    last.span, span, last.start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
+            TextDisplay.Plain -> LinkSpan(url)
         }
+        inSpans(span) {
+            parseChildren(element)
 
-    }
-
-    private fun createListSpan(last: PlaceholderSpan.ListItem): ParagraphStyle {
-        val gapWidth = styleConfig.bulletList.bulletGapWidth.roundToInt()
-        val bulletRadius = styleConfig.bulletList.bulletRadius.roundToInt()
-
-        return if (last.ordered) {
-            // TODO: provide typeface and textSize somehow
-            val typeface = Typeface.defaultFromStyle(Typeface.NORMAL)
-            val textSize = 16.dpToPx()
-            OrderedListSpan(typeface, textSize, last.order ?: 1, gapWidth)
-        } else {
-            UnorderedListSpan(gapWidth, bulletRadius)
+            // If the link is a mention, tag all but the first character of the anchor text with
+            // ExtraCharacterSpans. These characters will then be taken into account when translating
+            // between editor and composer model indices (see [EditorIndexMapper]).
+            if (isMention && this.length > 1) {
+                setSpan(
+                    ExtraCharacterSpan(), start + 1, this.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+            }
         }
     }
 
@@ -402,107 +241,27 @@ internal class HtmlToSpansParser(
     // region: Utils for whitespaces and indexes
 
     /**
-     * Add a line break for the current block element if needed.
-     */
-    private fun addLeadingLineBreakIfNeeded(start: Int): Int {
-        val previousBlock = spansToAdd.findLast {
-            it.span is BlockSpan && !it.isPlaceholder && (it.start >= start - 1 || it.end <= start)
-        }
-        return if (previousBlock == null) {
-            start
-        } else {
-            val previousBlockEnd = previousBlock.end
-            if (previousBlockEnd == start) {
-                text.insert(start, "\n")
-                start + 1
-            } else {
-                start
-            }
-        }
-    }
-
-    /**
      * Either add an extra NBSP character if missing in the current block element, or, if a NBSP
      * character exists, set it as extra character so it's ignored when mapping indexes.
      */
-    private fun handleNbspInBlock(pos: Int) {
-        if (pos == text.length) {
-            // If there was no NBSP char, add a new one as an extra character
-            text.append(NBSP)
-            addPendingSpan(ExtraCharacterSpan(), pos, pos + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-        } else if (text.length == pos + 1 && text[pos] == NBSP) {
-            // If there was one, set it as an extra character
-            addPendingSpan(ExtraCharacterSpan(), pos, pos + 1, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+    private fun SpannableStringBuilder.handleNbspInBlock(element: Element, start: Int, end: Int) {
+        if (!element.isBlock) return
+
+        if (element.childNodes().isEmpty()) {
+            this.append(NBSP)
+            setSpan(ExtraCharacterSpan(), end - 1, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        } else if (end - start == 1 && this.getOrNull(start) in listOf(' ', NBSP)) {
+            setSpan(ExtraCharacterSpan(), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        }
+    }
+
+    private fun SpannableStringBuilder.addLeadingLineBreakForBlockNode(element: Element) {
+        if (element.isBlock && element.previousElementSibling() != null) {
+            append('\n')
         }
     }
 
     // endregion
-
-    // region: Handle span placeholders for block spans
-
-    /**
-     * Used to add a placeholder span to be replaced in the future with its real version.
-     * This is used to 'book' a position inside the list of pending spans when we read a starting
-     * HTML tag so we can replace it later with its real version and range in the text.
-     */
-    private fun <T : Any> addPlaceHolderSpan(
-        span: T, start: Int = text.length, end: Int = text.length
-    ) {
-        val pendingSpan = PendingSpan(span, start, end, 0, true)
-        spansToAdd.add(pendingSpan)
-    }
-
-    /**
-     * Adds the final version of a span to the list of pending spans to be inserted in the text,
-     * with valid type, [start], [end], and [flags].
-     */
-    private fun <T : Any> addPendingSpan(
-        span: T, start: Int = text.length, end: Int = text.length, flags: Int
-    ) {
-        spansToAdd.add(PendingSpan(span, start, end, flags, false))
-    }
-
-    /**
-     * Replaces a [placeholder] span in the list of pending spans with its final version, including
-     * the real type, the [start] and [end] indexes and the real [flags] to apply.
-     */
-    private fun replacePlaceholderWithPendingSpan(
-        placeholder: Any,
-        span: Any = placeholder,
-        start: Int = text.length,
-        end: Int = text.length,
-        flags: Int
-    ) {
-        val index = spansToAdd.indexOfFirst { it.span === placeholder }
-        if (index >= 0) {
-            spansToAdd[index] = PendingSpan(span, start, end, flags, false)
-        }
-    }
-
-    // endregion
-
-    /**
-     * Looks for the last span of the type [T] in the list of pending spans
-     * in the range ([from], [to]).
-     */
-    private inline fun <reified T : Any> getLastPending(
-        from: Int = 0, to: Int = text.length
-    ): PendingSpan<T>? {
-        return getLastPending(T::class.java, from, to)
-    }
-
-    /**
-     * Looks for the last span of the [type] in the list of pending spans
-     * in the range ([from], [to]).
-     */
-    @Suppress("UNCHECKED_CAST")
-    private fun <T : Any> getLastPending(
-        type: Class<T>, from: Int = 0, to: Int = text.length
-    ): PendingSpan<T>? {
-        return spansToAdd.findLast {
-            type.isInstance(it.span) && from <= it.start && to >= it.end
-        } as? PendingSpan<T>
-    }
 
     private fun Int.dpToPx(): Float {
         return resourcesHelper.dpToPx(this)
@@ -566,12 +325,6 @@ internal class HtmlToSpansParser(
 
         fun Editable.removeFormattingSpans() = spans.flatMap { type ->
             getSpans(0, length, type).toList()
-        }.forEach {
-            removeSpan(it)
-        }
-
-        fun Editable.removePlaceholderSpans() = spans.flatMap { _ ->
-            getSpans<PlaceholderSpan>(0, length).toList()
         }.forEach {
             removeSpan(it)
         }

@@ -81,6 +81,9 @@ class MainActivity : ComponentActivity() {
                 var linkDialogAction by remember { mutableStateOf<LinkAction?>(null) }
                 val coroutineScope = rememberCoroutineScope()
 
+                LaunchedEffect(state.messageHtml) {
+                    Timber.d("Message HTML: '${state.messageHtml}'")
+                }
                 val htmlText = htmlConverter.fromHtmlToSpans(state.messageHtml)
 
                 linkDialogAction?.let { linkAction ->

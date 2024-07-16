@@ -90,8 +90,8 @@ dependencies {
 
     implementation libs.timber
 
-    // XML Parsing
-    api libs.tagsoup
+    // HTML Parsing
+    api libs.jsoup
 
     implementation libs.androidx.core
     implementation libs.androidx.appcompat
