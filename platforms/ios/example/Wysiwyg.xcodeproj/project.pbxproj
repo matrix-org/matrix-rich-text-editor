@@ -37,7 +37,6 @@
 		A6E13E5129A8F06E00A85A55 /* SerializationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6E13E5029A8F06E00A85A55 /* SerializationService.swift */; };
 		A6E13E5329A8F0DD00A85A55 /* WysiwygTextAttachmentData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6E13E5229A8F0DD00A85A55 /* WysiwygTextAttachmentData.swift */; };
 		A6E13E5529A8F1C400A85A55 /* WysiwygAttachmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6E13E5429A8F1C400A85A55 /* WysiwygAttachmentView.swift */; };
-		A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A6E6B26E2886D9AA009596F2 /* WysiwygComposer */; };
 		A6F3FC0128D4658000C170E8 /* AlertHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F3FC0028D4658000C170E8 /* AlertHelper.swift */; };
 		A6F3FC0428D465AF00C170E8 /* View.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F3FC0328D465AF00C170E8 /* View.swift */; };
 		A6F3FC0628DA123900C170E8 /* UIAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F3FC0528DA123900C170E8 /* UIAlertController.swift */; };
@@ -45,6 +44,7 @@
 		A6F4D0CF29AE0C1500087A3E /* Users.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F4D0CE29AE0C1500087A3E /* Users.swift */; };
 		A6F4D0D129AE0C3200087A3E /* Rooms.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F4D0D029AE0C3200087A3E /* Rooms.swift */; };
 		A6F4D0D329AE0C5100087A3E /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6F4D0D229AE0C5100087A3E /* Commands.swift */; };
+		A74D33FE2C468E1500A40BB5 /* WysiwygComposer in Frameworks */ = {isa = PBXBuildFile; productRef = A74D33FD2C468E1500A40BB5 /* WysiwygComposer */; };
 		A75C6AD22C3E989D0096D3A4 /* WysiwygUITests+Keyboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75C6AD12C3E989D0096D3A4 /* WysiwygUITests+Keyboard.swift */; };
 /* End PBXBuildFile section */
 
@@ -106,7 +106,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A6E6B26F2886D9AA009596F2 /* WysiwygComposer in Frameworks */,
+				A74D33FE2C468E1500A40BB5 /* WysiwygComposer in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -273,7 +273,7 @@
 			);
 			name = Wysiwyg;
 			packageProductDependencies = (
-				A6E6B26E2886D9AA009596F2 /* WysiwygComposer */,
+				A74D33FD2C468E1500A40BB5 /* WysiwygComposer */,
 			);
 			productName = Wysiwyg;
 			productReference = A6472CA72886CF830021A0E8 /* Wysiwyg.app */;
@@ -721,7 +721,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A6E6B26E2886D9AA009596F2 /* WysiwygComposer */ = {
+		A74D33FD2C468E1500A40BB5 /* WysiwygComposer */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = WysiwygComposer;
 		};
