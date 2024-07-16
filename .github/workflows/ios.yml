@@ -42,8 +42,8 @@ jobs:
     - name: Install targets
       run: make targets-ios
             
-    - name: Set Xcode 15.2
-      run: sudo xcode-select -switch /Applications/Xcode_15.2.app
+    - name: Set Xcode 15.4
+      run: sudo xcode-select -switch /Applications/Xcode_15.4.app
 
     - name: Build framework & bindings
       run: make ios
