@@ -22,9 +22,9 @@ import {
     new_composer_model_from_html,
 } from '../../generated/wysiwyg';
 import { getCurrentSelection } from '../dom';
+import { TraceAction } from '../types';
 import { isSelectTuple } from './assert';
 import { Actions } from './types';
-import { TraceAction } from './useTestCases';
 
 export function traceAction(
     testNode: HTMLElement | null,

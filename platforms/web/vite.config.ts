@@ -34,6 +34,7 @@ export default defineConfig({
                 'lib/types.ts',
                 'lib/constants.ts',
                 'lib/useListeners/types.ts',
+                'lib/useTestCases/types.ts',
             ],
             rollupTypes: true,
         }),

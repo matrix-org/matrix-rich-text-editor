@@ -16,20 +16,14 @@ limitations under the License.
 
 import { RefObject, useCallback, useMemo, useRef, useState } from 'react';
 
-import { ComposerModel, ComposerUpdate } from '../../generated/wysiwyg';
+import { ComposerModel } from '../../generated/wysiwyg';
 import { Actions } from './types';
 import {
     getSelectionAccordingToActions,
     resetTestCase,
     traceAction,
 } from './utils';
-
-export type TraceAction = (
-    update: ComposerUpdate | null,
-    name: string,
-    value1?: string | number,
-    value2?: string | number,
-) => ComposerUpdate | null;
+import { TraceAction } from '../types';
 
 export type UseTestCases = {
     testRef: RefObject<HTMLDivElement>;
