@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { ComposerUpdate } from '../generated/wysiwyg';
 import { ACTION_TYPES, SUGGESTIONS } from './constants';
 import { AllowedMentionAttributes, LinkEvent } from './useListeners/types';
 
@@ -72,3 +73,9 @@ export type MappedSuggestion = {
     text: string;
     type: SuggestionType;
 };
+export type TraceAction = (
+    update: ComposerUpdate | null,
+    name: string,
+    value1?: string | number,
+    value2?: string | number,
+) => ComposerUpdate | null;
