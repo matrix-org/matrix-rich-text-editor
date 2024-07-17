@@ -153,10 +153,11 @@ public class WysiwygComposerViewModel: WysiwygComposerViewModelProtocol, Observa
         model = ComposerModelWrapper()
         model.delegate = self
         // Publish composer empty state.
-//        $attributedContent.sink { [unowned self] content in
-//            isContentEmpty = content.text.length == 0 || content.plainText == "\n" // An empty <p> is left when deleting multi-line content.
-//        }
-//        .store(in: &cancellables)
+        $attributedContent.sink { [unowned self] content in
+            isContentEmpty = content.text.characters.count == 0
+                || content.plainText == "\n" // An empty <p> is left when deleting multi-line content.
+        }
+        .store(in: &cancellables)
         
         $idealHeight
             .removeDuplicates()
@@ -442,7 +443,7 @@ private extension WysiwygComposerViewModel {
                              startUtf16Codeunit: start,
                              endUtf16Codeunit: end):
             
-            applyReplaceAll(dom: dom, start: start, end: end)
+            applyReplaceAll(text: dom.toAttributedText, start: start, end: end)
             // Note: this makes replaceAll act like .keep on cases where we expect the text
             // view to be properly updated by the system.
             if !skipTextViewUpdate {
@@ -479,13 +480,13 @@ private extension WysiwygComposerViewModel {
     ///   - codeUnits: Array of UTF16 code units representing the current HTML.
     ///   - start: Start location for the selection.
     ///   - end: End location for the selection.
-    func applyReplaceAll(dom: DomNode, start: UInt32, end: UInt32) {
+    func applyReplaceAll(text: AttributedString, start: UInt32, end: UInt32) {
         let selection = NSRange(location: Int(start), length: Int(end - start))
-        attributedContent = WysiwygComposerAttributedContent(dom: dom,
+        attributedContent = WysiwygComposerAttributedContent(text: text,
                                                              selection: selection,
                                                              plainText: model.getContentAsPlainText())
         Logger.viewModel.logDebug(["Sel: \(selection)",
-                                   "Dom: \"\(dom)\"",
+                                   "Text: \"\(text)\"",
                                    "replaceAll"],
                                   functionName: #function)
     }

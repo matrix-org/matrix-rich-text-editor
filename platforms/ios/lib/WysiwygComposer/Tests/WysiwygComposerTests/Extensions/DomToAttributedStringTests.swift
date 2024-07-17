@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import CoreText
 @testable import WysiwygComposer
 import XCTest
 
@@ -28,6 +29,39 @@ final class DomToAttributedStringTests: XCTestCase {
                 .text(id: 4, text: " bar"),
             ]
         )
-        XCTAssertEqual(dom.toAttributedText, NSAttributedString(string: "foo bold bar"))
+        XCTAssertEqual(dom.toAttributedText, AttributedString(stringLiteral: "foo bold bar"))
+    }
+    
+    func testFormattedTextAttributes() throws {
+        let dom: DomNode = .container(
+            id: 0,
+            kind: .generic,
+            children: [
+                .text(id: 1, text: "Some"),
+                .container(id: 2, kind: .formatting(.bold), children: [
+                    .text(id: 3, text: " bold and"),
+                    .container(id: 2, kind: .formatting(.italic), children: [
+                        .text(id: 3, text: " italic"),
+                    ]),
+                ]),
+                .text(id: 4, text: " text"),
+            ]
+        )
+        let attributed = NSAttributedString(dom.toAttributedText)
+        
+        // Font at index 6 is bold
+        let fontTraits1 = attributed.fontSymbolicTraits(at: 6)
+        XCTAssert(fontTraits1.contains(.traitBold))
+        XCTAssert(!fontTraits1.contains(.traitItalic))
+        // Font at index 15 is bold and italic
+        let fontTraits2 = attributed.fontSymbolicTraits(at: 15)
+        print(fontTraits2)
+        
+        let a: CTFontSymbolicTraits = [.traitBold, .traitItalic]
+        print(a)
+        XCTAssert(fontTraits2.isSuperset(of: [.traitBold, .traitItalic]))
+        // Font at index 2 is neither italic, nor bold
+        let fontTraits3 = attributed.fontSymbolicTraits(at: 2)
+        XCTAssert(fontTraits3.isDisjoint(with: [.traitBold, .traitItalic]))
     }
 }

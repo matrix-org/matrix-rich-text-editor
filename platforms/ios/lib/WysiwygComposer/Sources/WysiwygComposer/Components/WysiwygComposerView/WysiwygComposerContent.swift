@@ -42,7 +42,7 @@ public class WysiwygComposerContent: NSObject {
 
 public struct WysiwygComposerAttributedContent {
     /// Attributed string representation of the displayed text.
-    public let dom: DomNode
+    public let text: AttributedString
     /// Range of the selected text within the attributed representation.
     public var selection: NSRange
     /// Plain text variant of the content saved for recovery.
@@ -56,10 +56,10 @@ public struct WysiwygComposerAttributedContent {
     ///   - text: Attributed string representation of the displayed text.
     ///   - selection: Range of the selected text within the attributed representation.
     ///   - plainText: Plain text variant of the content saved for recovery.
-    init(dom: DomNode = .text(id: 0, text: ""),
+    init(text: AttributedString = AttributedString(stringLiteral: ""),
          selection: NSRange = .zero,
          plainText: String = "") {
-        self.dom = dom
+        self.text = text
         self.selection = selection
         self.plainText = plainText
     }

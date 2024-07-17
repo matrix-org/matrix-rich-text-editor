@@ -14,6 +14,7 @@
 // limitations under the License.
 //
 
+import SwiftUI
 import UIKit
 
 /// An internal delegate for the `WysiwygTextView`, used to bring paste and key commands events
@@ -124,6 +125,7 @@ public class WysiwygTextView: UITextView {
         performWithoutDelegate {
             // Set selection to {0, 0} then to expected position
             // avoids an issue with autocapitalization.
+            self.attributedText = NSAttributedString(content.text)
             self.selectedRange = .zero
             self.selectedRange = content.selection
 
