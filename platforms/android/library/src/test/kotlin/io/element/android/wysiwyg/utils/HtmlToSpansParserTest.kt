@@ -30,13 +30,13 @@ class HtmlToSpansParserTest {
         assertThat(
             spanned.dumpSpans(), equalTo(
                 listOf(
-                    "bold: android.text.style.StyleSpan (0-4) fl=#33",
-                    "italic: android.text.style.StyleSpan (4-10) fl=#33",
-                    "underline: android.text.style.UnderlineSpan (10-19) fl=#33",
-                    "strong: android.text.style.StyleSpan (19-25) fl=#33",
-                    "emphasis: android.text.style.StyleSpan (25-33) fl=#33",
-                    "strikethrough: android.text.style.StrikethroughSpan (33-46) fl=#33",
-                    "code: io.element.android.wysiwyg.view.spans.InlineCodeSpan (46-50) fl=#33",
+                    "bold: android.text.style.StyleSpan (0-4) fl=#17",
+                    "italic: android.text.style.StyleSpan (4-10) fl=#17",
+                    "underline: android.text.style.UnderlineSpan (10-19) fl=#17",
+                    "strong: android.text.style.StyleSpan (19-25) fl=#17",
+                    "emphasis: android.text.style.StyleSpan (25-33) fl=#17",
+                    "strikethrough: android.text.style.StrikethroughSpan (33-46) fl=#17",
+                    "code: io.element.android.wysiwyg.view.spans.InlineCodeSpan (46-50) fl=#17",
                 )
             )
         )
@@ -56,14 +56,13 @@ class HtmlToSpansParserTest {
         """.trimIndent()
         val spanned = convertHtml(html)
 
-
         assertThat(
             spanned.dumpSpans().joinToString(",\n"), equalTo(
                 """
-                    ordered1: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-8) fl=#34,
-                    ordered2: io.element.android.wysiwyg.view.spans.OrderedListSpan (9-17) fl=#34,
-                    bullet1: io.element.android.wysiwyg.view.spans.UnorderedListSpan (18-25) fl=#34,
-                    bullet2: io.element.android.wysiwyg.view.spans.UnorderedListSpan (26-33) fl=#34
+                    ordered1: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-8) fl=#17,
+                    ordered2: io.element.android.wysiwyg.view.spans.OrderedListSpan (9-17) fl=#17,
+                    bullet1: io.element.android.wysiwyg.view.spans.UnorderedListSpan (18-25) fl=#17,
+                    bullet2: io.element.android.wysiwyg.view.spans.UnorderedListSpan (26-33) fl=#17
                 """.trimIndent()
             )
         )
@@ -104,13 +103,12 @@ class HtmlToSpansParserTest {
         assertThat(
             spanned.dumpSpans(), equalTo(
                 listOf(
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
-                    "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (2-3) fl=#17"
+                    "\n: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (0-1) fl=#17",
                 )
             )
         )
         assertThat(
-            spanned.toString(), equalTo("$NBSP\n$NBSP")
+            spanned.toString(), equalTo("\n$NBSP")
         )
     }
 
@@ -119,9 +117,7 @@ class HtmlToSpansParserTest {
         val html = "<p>Hello</p><br /><p>world</p>"
         val spanned = convertHtml(html)
         assertThat(
-            spanned.dumpSpans(), equalTo(
-                emptyList()
-            )
+            spanned.dumpSpans(), equalTo(emptyList())
         )
         assertThat(
             spanned.toString(), equalTo("Hello\n\nworld")
@@ -131,9 +127,8 @@ class HtmlToSpansParserTest {
     @Test
     fun testMentionDisplayWithCustomMentionDisplayHandler() {
         val html = """
-            <a href="https://element.io">link</a>
-            <a href="https://matrix.to/#/@test:example.org" contenteditable="false">jonny</a>
-            @room
+            <a href="https://element.io">link</a>$NBSP
+            <a href="https://matrix.to/#/@test:example.org" contenteditable="false">jonny</a>$NBSP@room
         """.trimIndent()
         val spanned = convertHtml(html, mentionDisplayHandler = object : MentionDisplayHandler {
             override fun resolveAtRoomMentionDisplay(): TextDisplay =
@@ -145,15 +140,15 @@ class HtmlToSpansParserTest {
         assertThat(
             spanned.dumpSpans(), equalTo(
                 listOf(
-                    "link: io.element.android.wysiwyg.view.spans.LinkSpan (0-4) fl=#33",
-                    "jonny: io.element.android.wysiwyg.view.spans.PillSpan (5-10) fl=#33",
+                    "link: io.element.android.wysiwyg.view.spans.LinkSpan (0-4) fl=#17",
                     "onny: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (6-10) fl=#33",
+                    "jonny: io.element.android.wysiwyg.view.spans.PillSpan (5-10) fl=#17",
                     "@room: io.element.android.wysiwyg.view.spans.PillSpan (11-16) fl=#33",
                 )
             )
         )
         assertThat(
-            spanned.toString(), equalTo("link\njonny\n@room")
+            spanned.toString().replace(NBSP, ' '), equalTo("link jonny @room")
         )
     }
 

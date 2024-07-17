@@ -57,7 +57,7 @@ google-material = { module="com.google.android.material:material", version.ref="
 
 # Misc
 timber = { module="com.jakewharton.timber:timber", version.ref="timber" }
-tagsoup = { module="org.ccil.cowan.tagsoup:tagsoup", version.ref="tagsoup" }
+jsoup = "org.jsoup:jsoup:1.18.1"
 molecule-runtime = { module = "app.cash.molecule:molecule-runtime", version.ref = "molecule" }
 
 # Test
