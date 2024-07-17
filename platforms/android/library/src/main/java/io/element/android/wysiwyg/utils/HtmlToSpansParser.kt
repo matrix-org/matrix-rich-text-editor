@@ -25,8 +25,12 @@ import io.element.android.wysiwyg.view.spans.PlainAtRoomMentionDisplaySpan
 import io.element.android.wysiwyg.view.spans.QuoteSpan
 import io.element.android.wysiwyg.view.spans.UnorderedListSpan
 import org.jsoup.Jsoup
+import org.jsoup.internal.StringUtil
+import org.jsoup.nodes.Document.OutputSettings
 import org.jsoup.nodes.Element
+import org.jsoup.nodes.Node
 import org.jsoup.nodes.TextNode
+import org.jsoup.safety.Safelist
 import timber.log.Timber
 import kotlin.math.roundToInt
 
@@ -44,11 +48,20 @@ internal class HtmlToSpansParser(
     private val mentionDisplayHandler: MentionDisplayHandler?,
     private val isMention: ((text: String, url: String) -> Boolean)? = null,
 ) {
+    private val safeList = Safelist()
+        .addTags(
+            "a", "b", "strong", "i", "em", "u", "del", "code", "ul", "ol", "li", "pre",
+            "blockquote", "p", "br"
+        )
+        .addAttributes("a", "href", "data-mention-type", "contenteditable")
+
     /**
      * Convert the HTML string into a [Spanned] text.
      */
     fun convert(): Spanned {
-        val dom = Jsoup.parse(html)
+        val outputSettings = OutputSettings().prettyPrint(false).indentAmount(0)
+        val cleanHtml = Jsoup.clean(html, "", safeList, outputSettings)
+        val dom = Jsoup.parse(cleanHtml)
         val text = buildSpannedString {
             val body = dom.body()
             parseChildren(body)
@@ -58,11 +71,11 @@ internal class HtmlToSpansParser(
         return text
     }
 
-    private fun SpannableStringBuilder.parseChildren(element: Element) {
+    private fun SpannableStringBuilder.parseChildren(element: Element, parseTextNodes: Boolean = true) {
         for (child in element.childNodes()) {
             when (child) {
                 is Element -> parseElement(child)
-                is TextNode -> parseTextNode(child)
+                is TextNode -> if (parseTextNodes) parseTextNode(child)
             }
         }
     }
@@ -74,8 +87,9 @@ internal class HtmlToSpansParser(
             "i", "em" -> parseInlineFormatting(element, InlineFormat.Italic)
             "u" -> parseInlineFormatting(element, InlineFormat.Underline)
             "del" -> parseInlineFormatting(element, InlineFormat.StrikeThrough)
+            // Note we're using a different method for inline code
             "code" -> parseInlineCode(element)
-            "ul", "ol" -> parseChildren(element)
+            "ul", "ol" -> parseList(element)
             "li" -> parseListItem(element)
             "pre" -> parseCodeBlock(element)
             "blockquote" -> parseQuote(element)
@@ -89,8 +103,22 @@ internal class HtmlToSpansParser(
 
     // region: Handle parsing of tags into spans
 
+    private fun SpannableStringBuilder.parseList(element: Element) {
+        addLeadingLineBreakForBlockNode(element)
+        parseChildren(element, parseTextNodes = false)
+    }
+
     private fun SpannableStringBuilder.parseTextNode(child: TextNode) {
-        val text = child.wholeText
+        val isPreformattedText = child.anyAncestor { it.nameIs("pre") }
+        val text = if (isPreformattedText) {
+            child.wholeText
+        } else {
+            if (child.isBlank) {
+                child.normalisedWhitespace(stripLeading = true)
+            } else {
+                child.normalisedWhitespace(stripLeading = false)
+            }
+        }
         if (text.isEmpty()) return
 
         val previousSibling = child.previousSibling() as? Element
@@ -106,6 +134,7 @@ internal class HtmlToSpansParser(
             InlineFormat.Italic -> StyleSpan(Typeface.ITALIC)
             InlineFormat.Underline -> UnderlineSpan()
             InlineFormat.StrikeThrough -> StrikethroughSpan()
+            // This is handled in parseInlineCode instead
             InlineFormat.InlineCode -> return
         }
         inSpans(span) {
@@ -130,19 +159,20 @@ internal class HtmlToSpansParser(
     private fun SpannableStringBuilder.parseQuote(element: Element) {
         addLeadingLineBreakForBlockNode(element)
         val start = this.length
-        inSpans(
+        inSpansWithFlags(
             QuoteSpan(
                 // TODO provide these values from the style config
                 indicatorColor = 0xC0A0A0A0.toInt(),
                 indicatorWidth = 4.dpToPx().toInt(),
                 indicatorPadding = 6.dpToPx().toInt(),
                 margin = 10.dpToPx().toInt(),
-            )
+            ),
+            // Used to blockquote always wraps any internal block element (list, code block, etc.)
+            flags = Spanned.SPAN_INCLUSIVE_EXCLUSIVE or (1 shl Spanned.SPAN_PRIORITY_SHIFT)
         ) {
             parseChildren(element)
+            handleNbspInBlock(element, start, length)
         }
-
-        handleNbspInBlock(element, start, length)
     }
 
     private fun SpannableStringBuilder.parseCodeBlock(element: Element) {
@@ -156,9 +186,9 @@ internal class HtmlToSpansParser(
             )
         ) {
             append(element.wholeText())
+            handleNbspInBlock(element, start, length)
         }
 
-        handleNbspInBlock(element, start, length)
         // Handle NBSPs for new lines inside the preformatted text
         for (i in start + 1 until length) {
             if (this[i] == NBSP) {
@@ -180,12 +210,13 @@ internal class HtmlToSpansParser(
                 val order = (element.parent()?.select("li")?.indexOf(element) ?: 0) + 1
                 OrderedListSpan(typeface, textSize, order, gapWidth)
             }
-
             else -> return
         }
         addLeadingLineBreakForBlockNode(element)
+        val start = this.length
         inSpans(span) {
             parseChildren(element)
+            handleNbspInBlock(element, start, length)
         }
     }
 
@@ -251,7 +282,7 @@ internal class HtmlToSpansParser(
     private fun SpannableStringBuilder.handleNbspInBlock(element: Element, start: Int, end: Int) {
         if (!element.isBlock) return
 
-        if (element.childNodes().isEmpty()) {
+        if (element.childNodes().isEmpty() && this.isNotEmpty()) {
             this.append(NBSP)
             setSpan(ExtraCharacterSpan(), end - 1, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         } else if (end - start == 1 && this.getOrNull(start) in listOf(' ', NBSP)) {
@@ -260,7 +291,7 @@ internal class HtmlToSpansParser(
     }
 
     private fun SpannableStringBuilder.addLeadingLineBreakForBlockNode(element: Element) {
-        if (element.isBlock && element.previousElementSibling() != null) {
+        if (element.isBlock && element.previousElementSibling()?.takeIf { it.tagName() != "br" } != null) {
             append('\n')
         }
     }
@@ -291,6 +322,57 @@ internal class HtmlToSpansParser(
         }
     }
 
+    private fun Node.anyAncestor(block: (Node) -> Boolean): Boolean {
+        var parent = parent()
+        while (parent != null) {
+            if (block(parent)) return true
+            parent = parent.parent()
+        }
+        return false
+    }
+
+    private fun TextNode.normalisedWhitespace(stripLeading: Boolean): String {
+        var lastWasWhite = false
+        var reachedNonWhite = false
+        val text = wholeText
+        // Special case for when there's a single space
+        if (stripLeading && wholeText == " ") return wholeText
+        val result = StringUtil.borrowBuilder()
+        var i = 0
+        while (i < wholeText.length) {
+            val c = text.codePointAt(i)
+            if (StringUtil.isActuallyWhitespace(c)) {
+                if (c == NBSP.code) {
+                    result.appendCodePoint(c)
+                } else if ((stripLeading && !reachedNonWhite) || lastWasWhite) {
+                    i += Character.charCount(c)
+                    continue
+                } else {
+                    result.append(' ')
+                }
+                lastWasWhite = true
+            } else {
+                result.appendCodePoint(c)
+                reachedNonWhite = true
+                lastWasWhite = false
+            }
+            i += Character.charCount(c)
+        }
+        return StringUtil.releaseBuilder(result)
+    }
+
+    private inline fun SpannableStringBuilder.inSpansWithFlags(
+        vararg spans: Any,
+        flags: Int,
+        block: SpannableStringBuilder.() -> Unit
+    ) {
+        val from = length
+        block()
+        val to = length
+        for (span in spans) {
+            setSpan(span, from, to, flags)
+        }
+    }
 
     companion object FormattingSpans {
         /**

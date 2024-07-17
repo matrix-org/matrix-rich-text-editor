@@ -361,7 +361,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
-                    hello: io.element.android.wysiwyg.view.spans.QuoteSpan (0-5) fl=#17,
+                    hello: io.element.android.wysiwyg.view.spans.QuoteSpan (0-5) fl=#65553,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
@@ -408,8 +408,8 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
+                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.QuoteSpan (0-6) fl=#65553",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
-                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.QuoteSpan (0-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
                     ": android.text.Selection.START (5-5) fl=#546",
@@ -426,7 +426,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test: io.element.android.wysiwyg.view.spans.QuoteSpan (0-4) fl=#17",
+                    "Test: io.element.android.wysiwyg.view.spans.QuoteSpan (0-4) fl=#65553",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
