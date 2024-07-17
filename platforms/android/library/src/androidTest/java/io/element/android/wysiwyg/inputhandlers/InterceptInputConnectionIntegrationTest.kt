@@ -26,7 +26,8 @@ class InterceptInputConnectionIntegrationTest {
     private val viewModel = EditorViewModel(
         provideComposer = { newComposerModel() },
     ).also {
-        it.htmlConverter = HtmlConverter.Factory.create(context = app,
+        it.htmlConverter = HtmlConverter.Factory.create(
+            context = app,
             styleConfig = styleConfig,
             mentionDisplayHandler = null,
         )
@@ -57,7 +58,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
-                    "hello: android.text.style.StyleSpan (0-5) fl=#33",
+                    "hello: android.text.style.StyleSpan (0-5) fl=#17",
                     "hello: android.text.method.TextKeyListener (0-5) fl=#18",
                     "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
@@ -80,7 +81,7 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 baseEditedSpans.toMutableList().apply {
-                    add(1, "world: android.text.style.StyleSpan (0-5) fl=#33")
+                    add(1, "world: android.text.style.StyleSpan (0-5) fl=#17")
                 }
             )
         )
@@ -97,7 +98,7 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 baseEditedSpans.toMutableList().apply {
-                    add(1, "world: android.text.style.UnderlineSpan (0-5) fl=#33")
+                    add(1, "world: android.text.style.UnderlineSpan (0-5) fl=#17")
                 }
             )
         )
@@ -114,7 +115,7 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 baseEditedSpans.toMutableList().apply {
-                    add(1, "world: android.text.style.StrikethroughSpan (0-5) fl=#33")
+                    add(1, "world: android.text.style.StrikethroughSpan (0-5) fl=#17")
                 }
             )
         )
@@ -131,7 +132,7 @@ class InterceptInputConnectionIntegrationTest {
         assertThat(
             textView.text.dumpSpans(), equalTo(
                 baseEditedSpans.toMutableList().apply {
-                    add(1, "world: io.element.android.wysiwyg.view.spans.InlineCodeSpan (0-5) fl=#33")
+                    add(1, "world: io.element.android.wysiwyg.view.spans.InlineCodeSpan (0-5) fl=#17")
                 }
             )
         )
@@ -147,7 +148,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
-                    "hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34",
+                    "hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#17",
                     "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                     "hello: android.text.method.TextKeyListener (0-5) fl=#18",
@@ -173,7 +174,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
-                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
+                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#17,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
@@ -195,7 +196,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
-                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#34,
+                    hello: io.element.android.wysiwyg.view.spans.UnorderedListSpan (0-5) fl=#17,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
@@ -221,7 +222,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
-                    hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#34,
+                    hello: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-5) fl=#17,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
@@ -244,7 +245,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "😋😋: android.widget.TextView.ChangeWatcher (0-4) fl=#6553618",
-                    "😋😋: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-4) fl=#34",
+                    "😋😋: io.element.android.wysiwyg.view.spans.OrderedListSpan (0-4) fl=#17",
                     "😋😋: android.text.style.UnderlineSpan (0-4) fl=#289",
                     "😋😋: android.view.inputmethod.ComposingText (0-4) fl=#289",
                     "😋😋: android.text.method.TextKeyListener (0-4) fl=#18",
@@ -270,7 +271,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618",
-                    "hello: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-5) fl=#33",
+                    "hello: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-5) fl=#17",
                     "hello: android.text.style.UnderlineSpan (0-5) fl=#289",
                     "hello: android.view.inputmethod.ComposingText (0-5) fl=#289",
                     "hello: android.text.method.TextKeyListener (0-5) fl=#18",
@@ -317,7 +318,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-6) fl=#33",
+                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-6) fl=#17",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
@@ -335,7 +336,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-4) fl=#33",
+                    "Test: io.element.android.wysiwyg.view.spans.CodeBlockSpan (0-4) fl=#17",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
@@ -360,7 +361,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans().joinToString(",\n"), equalTo(
                 """
                     hello: android.widget.TextView.ChangeWatcher (0-5) fl=#6553618,
-                    hello: io.element.android.wysiwyg.view.spans.QuoteSpan (0-5) fl=#33,
+                    hello: io.element.android.wysiwyg.view.spans.QuoteSpan (0-5) fl=#65553,
                     hello: android.text.style.UnderlineSpan (0-5) fl=#289,
                     hello: android.view.inputmethod.ComposingText (0-5) fl=#289,
                     hello: android.text.method.TextKeyListener (0-5) fl=#18,
@@ -407,7 +408,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.QuoteSpan (0-6) fl=#33",
+                    "Test\n$NBSP: io.element.android.wysiwyg.view.spans.QuoteSpan (0-6) fl=#65553",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
@@ -425,7 +426,7 @@ class InterceptInputConnectionIntegrationTest {
             textView.text.dumpSpans(), equalTo(
                 listOf(
                     "Test\n$NBSP: android.widget.TextView.ChangeWatcher (0-6) fl=#6553618",
-                    "Test: io.element.android.wysiwyg.view.spans.QuoteSpan (0-4) fl=#33",
+                    "Test: io.element.android.wysiwyg.view.spans.QuoteSpan (0-4) fl=#65553",
                     "$NBSP: io.element.android.wysiwyg.view.spans.ExtraCharacterSpan (5-6) fl=#17",
                     "Test\n$NBSP: android.text.method.TextKeyListener (0-6) fl=#18",
                     "Test\n$NBSP: android.widget.Editor.SpanController (0-6) fl=#18",
