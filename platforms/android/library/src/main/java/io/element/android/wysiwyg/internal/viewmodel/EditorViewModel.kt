@@ -300,6 +300,7 @@ internal class EditorViewModel(
             composer?.replaceTextSuggestion(
                 suggestion = suggestion,
                 newText = action.value,
+                appendSpace = true
             )
         }.onFailure(
             ::onComposerFailure

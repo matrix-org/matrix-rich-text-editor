@@ -75,10 +75,12 @@ private fun processSuggestion(suggestion: MenuAction.Suggestion, roomMemberSugge
     val slashCommands = listOf("leave", "shrug").map(Mention::SlashCommand)
     val everyone = Mention.NotifyEveryone
     val names = when (suggestion.suggestionPattern.key) {
-        PatternKey.AT -> people + everyone
-        PatternKey.HASH -> rooms
-        PatternKey.SLASH -> slashCommands
+        PatternKey.At -> people + everyone
+        PatternKey.Hash -> rooms
+        PatternKey.Slash -> slashCommands
+        is PatternKey.Custom -> listOf()
     }
+
     val suggestions = names
         .filter { it.display.contains(text) }
     roomMemberSuggestions.clear()
