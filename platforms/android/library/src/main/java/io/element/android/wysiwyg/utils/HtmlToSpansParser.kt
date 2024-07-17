@@ -27,6 +27,7 @@ import io.element.android.wysiwyg.view.spans.UnorderedListSpan
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
+import timber.log.Timber
 import kotlin.math.roundToInt
 
 /**
@@ -80,6 +81,9 @@ internal class HtmlToSpansParser(
             "blockquote" -> parseQuote(element)
             "p" -> parseParagraph(element)
             "br" -> parseLineBreak(element)
+            else -> if (LoggingConfig.enableDebugLogs) {
+                Timber.d("Unsupported tag: ${element.tagName()}")
+            }
         }
     }
 

@@ -2,6 +2,7 @@ package io.element.android.wysiwyg
 
 import android.text.Editable
 import android.text.TextWatcher
+import io.element.android.wysiwyg.utils.LoggingConfig
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -13,8 +14,6 @@ internal class EditorTextWatcher: TextWatcher {
     private val updateIsFromEditor: AtomicBoolean = AtomicBoolean(false)
 
     val isInEditorChange get() = updateIsFromEditor.get()
-
-    var enableDebugLogs = false
 
     private var beforeText: CharSequence? = null
 
@@ -53,7 +52,7 @@ internal class EditorTextWatcher: TextWatcher {
     }
 
     override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-        if (enableDebugLogs) {
+        if (LoggingConfig.enableDebugLogs) {
             Timber.v("beforeTextChanged | text: \"$s\", start: $start, count: $count, after: $after")
         }
         if (!updateIsFromEditor.get()) {
@@ -62,7 +61,7 @@ internal class EditorTextWatcher: TextWatcher {
     }
 
     override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-        if (enableDebugLogs) {
+        if (LoggingConfig.enableDebugLogs) {
             Timber.v("onTextChanged | text: \"$s\", start: $start, before: $before, count: $count")
         }
         if (!updateIsFromEditor.get()) {
@@ -72,7 +71,7 @@ internal class EditorTextWatcher: TextWatcher {
     }
 
     override fun afterTextChanged(s: Editable?) {
-        if (enableDebugLogs) {
+        if (LoggingConfig.enableDebugLogs) {
             Timber.v("afterTextChanged")
         }
         if (!updateIsFromEditor.get()) {
