@@ -1,5 +1,10 @@
 # Changelog
 
+# [2.37.7] - 2024-07-18
+- [Common] Add auto completion for emojis.
+- [Android] Fix issues with new lines by replacing the HTML parser with Jsoup.
+- [iOS] Added support for Xcode 15.4, improved XCFramework generation script. 
+
 # [2.37.6] - 2024-07-15
 - [iOS] Re-enabled inline prediction and replaced the behaviour of reconciliate with a commmited text system for latin and common only characters, to allow for a better user experience with inline prediction.
 
