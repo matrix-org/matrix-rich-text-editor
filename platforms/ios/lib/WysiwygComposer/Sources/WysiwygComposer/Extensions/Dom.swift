@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import SwiftUI
 import UIKit
 
 protocol ContentEquality {
@@ -57,11 +58,11 @@ extension DomNode: ContentEquality {
                 returnIndex = attributedString(for: child, and: &string, index: returnIndex, attributes: combinedAttributes)
             }
             return returnIndex
-        case .text(path: _, text: let text):
-            string.append(AttributedString(text, attributes: attributes))
+        case .text(path: let path, text: let text):
+            string.append(createAttributes(text: text, attributes: attributes, path: path))
             return index + text.count
-        case .lineBreak:
-            string.append(AttributedString(String.lineFeed, attributes: attributes))
+        case .lineBreak(path: let path):
+            string.append(createAttributes(text: String.lineFeed, attributes: attributes, path: path))
             return index + String.lineFeed.count
         case .mention:
             break
@@ -69,8 +70,15 @@ extension DomNode: ContentEquality {
         return index
     }
     
+    func createAttributes(text: String, attributes: AttributeContainer, path: [UInt32]) -> AttributedString {
+        var string = AttributedString(text, attributes: attributes)
+        string.wysiwyg.nodeHandle = DomHandle(path: path)
+        return string
+    }
+    
     func attributedString(for node: ContainerNodeKind, children: [DomNode], and string: AttributedString, index: Int) { }
     
+    // swiftlint:disable:next cyclomatic_complexity
     func updateAttributes(for kind: ContainerNodeKind, and container: AttributeContainer) -> AttributeContainer {
         var mergeContainer = AttributeContainer().merging(container)
         switch kind {
