@@ -73,6 +73,8 @@ struct WysiwygSuggestionList: View {
                             .accessibilityIdentifier(command.accessibilityIdentifier)
                         }
                     }
+                case .custom:
+                    EmptyView()
                 }
             }
             .padding(.horizontal, 8)

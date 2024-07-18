@@ -10,3 +10,4 @@ scripts
 cypress
 example-wysiwyg
 coverage
+.eslintignore

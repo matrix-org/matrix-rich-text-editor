@@ -184,6 +184,7 @@ export function handleInput(
     formattingFunctions: FormattingFunctions,
     suggestion: SuggestionPattern | null,
     inputEventProcessor?: InputEventProcessor,
+    emojiSuggestions?: Map<string, string>,
 ):
     | {
           content?: string;
@@ -199,6 +200,7 @@ export function handleInput(
         editor,
         suggestion,
         inputEventProcessor,
+        emojiSuggestions,
     );
     if (update) {
         const repl = update.text_update().replace_all;

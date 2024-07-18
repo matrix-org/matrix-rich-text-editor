@@ -55,7 +55,7 @@ function Button({ onClick, imagePath, alt, state }: ButtonProps): ReactElement {
         </button>
     );
 }
-
+const emojiSuggestions = new Map<string, string>([[':)', '🙂']]);
 function App(): ReactElement {
     const [enterToSend, setEnterToSend] = useState(true);
 
@@ -87,6 +87,7 @@ function App(): ReactElement {
         useWysiwyg({
             isAutoFocusEnabled: true,
             inputEventProcessor,
+            emojiSuggestions: emojiSuggestions,
         });
 
     const onEnterToSendChanged = (): void => {

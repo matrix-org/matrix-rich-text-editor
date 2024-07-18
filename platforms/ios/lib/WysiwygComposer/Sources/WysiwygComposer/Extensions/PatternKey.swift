@@ -22,7 +22,7 @@ public extension PatternKey {
             return .user
         case .hash:
             return .room
-        case .slash:
+        case .slash, .custom:
             return nil
         }
     }

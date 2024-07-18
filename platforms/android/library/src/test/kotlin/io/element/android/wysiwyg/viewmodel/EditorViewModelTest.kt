@@ -297,7 +297,7 @@ internal class EditorViewModelTest {
         val name = "jonny"
         val url = "https://matrix.to/#/@test:matrix.org"
         val suggestionPattern =
-            SuggestionPattern(PatternKey.AT, text = "jonny", 0.toUInt(), 5.toUInt())
+            SuggestionPattern(PatternKey.At, text = "jonny", 0.toUInt(), 5.toUInt())
         composer.givenReplaceTextResult(MockComposerUpdateFactory.create(
             menuAction = MenuAction.Suggestion(suggestionPattern)
         ))
@@ -315,7 +315,7 @@ internal class EditorViewModelTest {
     @Test
     fun `when process insert @room mention at suggestion action, it returns a text update`() {
         val suggestionPattern =
-            SuggestionPattern(PatternKey.AT, text = "room", 0.toUInt(), 4.toUInt())
+            SuggestionPattern(PatternKey.At, text = "room", 0.toUInt(), 4.toUInt())
         composer.givenReplaceTextResult(MockComposerUpdateFactory.create(
             menuAction = MenuAction.Suggestion(suggestionPattern)
         ))

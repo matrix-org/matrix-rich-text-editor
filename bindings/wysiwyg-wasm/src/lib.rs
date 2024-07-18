@@ -92,6 +92,20 @@ impl ToUtf16TupleVec for js_sys::Map {
     }
 }
 
+trait ToStringVec {
+    fn into_vec(self) -> Vec<String>;
+}
+
+impl ToStringVec for js_sys::Array {
+    fn into_vec(self) -> Vec<String> {
+        let mut vec = vec![];
+        self.for_each(&mut |element, _, _| {
+            vec.push(element.as_string().unwrap());
+        });
+        vec
+    }
+}
+
 #[wasm_bindgen]
 #[derive(Default)]
 pub struct ComposerModel {
@@ -185,10 +199,12 @@ impl ComposerModel {
         &mut self,
         new_text: &str,
         suggestion: &SuggestionPattern,
+        append_space: bool,
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.replace_text_suggestion(
             Utf16String::from_str(new_text),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),
+            append_space,
         ))
     }
 
@@ -314,6 +330,15 @@ impl ComposerModel {
             Utf16String::from_str(text),
             attributes.into_vec(),
         ))
+    }
+
+    pub fn set_custom_suggestion_patterns(
+        &mut self,
+        custom_suggestion_patterns: js_sys::Array,
+    ) {
+        self.inner.set_custom_suggestion_patterns(
+            custom_suggestion_patterns.into_vec(),
+        );
     }
 
     /// Creates an at-room mention node and inserts it into the composer at the current selection
@@ -687,28 +712,52 @@ impl From<SuggestionPattern> for wysiwyg::SuggestionPattern {
 
 #[wasm_bindgen]
 #[derive(Clone)]
-pub enum PatternKey {
+pub enum PatternKeyType {
     At,
     Hash,
     Slash,
+    Custom,
+}
+
+#[derive(Clone)]
+#[wasm_bindgen(getter_with_clone)]
+pub struct PatternKey {
+    pub key_type: PatternKeyType,
+    pub custom_key_value: Option<String>,
 }
 
 impl From<wysiwyg::PatternKey> for PatternKey {
     fn from(inner: wysiwyg::PatternKey) -> Self {
         match inner {
-            wysiwyg::PatternKey::At => Self::At,
-            wysiwyg::PatternKey::Hash => Self::Hash,
-            wysiwyg::PatternKey::Slash => Self::Slash,
+            wysiwyg::PatternKey::At => Self {
+                key_type: PatternKeyType::At,
+                custom_key_value: None,
+            },
+            wysiwyg::PatternKey::Hash => Self {
+                key_type: PatternKeyType::Hash,
+                custom_key_value: None,
+            },
+            wysiwyg::PatternKey::Slash => Self {
+                key_type: PatternKeyType::Slash,
+                custom_key_value: None,
+            },
+            wysiwyg::PatternKey::Custom(key) => Self {
+                key_type: PatternKeyType::Custom,
+                custom_key_value: Some(key),
+            },
         }
     }
 }
 
 impl From<PatternKey> for wysiwyg::PatternKey {
     fn from(key: PatternKey) -> Self {
-        match key {
-            PatternKey::At => Self::At,
-            PatternKey::Hash => Self::Hash,
-            PatternKey::Slash => Self::Slash,
+        match key.key_type {
+            PatternKeyType::At => Self::At,
+            PatternKeyType::Hash => Self::Hash,
+            PatternKeyType::Slash => Self::Slash,
+            PatternKeyType::Custom => {
+                Self::Custom(key.custom_key_value.unwrap())
+            }
         }
     }
 }

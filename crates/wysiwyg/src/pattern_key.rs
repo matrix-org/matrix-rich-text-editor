@@ -12,16 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PatternKey {
     At,
     Hash,
     Slash,
+    Custom(String),
 }
 
 impl PatternKey {
-    pub(crate) fn from_char(char: char) -> Option<Self> {
-        match char {
+    pub(crate) fn is_static_pattern(&self) -> bool {
+        matches!(self, Self::At | Self::Hash | Self::Slash)
+    }
+
+    pub(crate) fn from_string_and_suggestions(
+        string: String,
+        custom_suggestion_patterns: &HashSet<String>,
+    ) -> Option<Self> {
+        if custom_suggestion_patterns.contains(&string) {
+            return Some(Self::Custom(string));
+        }
+        let Some(first_char) = string.chars().nth(0) else {
+            return None;
+        };
+        match first_char {
             '\u{0040}' => Some(Self::At),
             '\u{0023}' => Some(Self::Hash),
             '\u{002F}' => Some(Self::Slash),

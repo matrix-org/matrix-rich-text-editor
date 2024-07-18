@@ -17,6 +17,7 @@ pub enum PatternKey {
     At,
     Hash,
     Slash,
+    Custom(String),
 }
 
 impl From<wysiwyg::PatternKey> for PatternKey {
@@ -25,6 +26,7 @@ impl From<wysiwyg::PatternKey> for PatternKey {
             wysiwyg::PatternKey::At => Self::At,
             wysiwyg::PatternKey::Hash => Self::Hash,
             wysiwyg::PatternKey::Slash => Self::Slash,
+            wysiwyg::PatternKey::Custom(key) => Self::Custom(key),
         }
     }
 }
@@ -35,6 +37,7 @@ impl From<PatternKey> for wysiwyg::PatternKey {
             PatternKey::At => Self::At,
             PatternKey::Hash => Self::Hash,
             PatternKey::Slash => Self::Slash,
+            PatternKey::Custom(key) => Self::Custom(key),
         }
     }
 }

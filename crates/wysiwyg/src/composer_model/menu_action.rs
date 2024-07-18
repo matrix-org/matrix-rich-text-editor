@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::collections::HashSet;
+
 use crate::{
     dom::{
         unicode_string::{UnicodeStr, UnicodeStringExt},
@@ -37,7 +39,12 @@ where
             return MenuAction::None;
         }
         let (raw_text, start, end) = self.extended_text(range);
-        if let Some((key, text)) = Self::pattern_for_text(raw_text, start) {
+
+        if let Some((key, text)) = Self::pattern_for_text(
+            raw_text,
+            start,
+            &self.custom_suggestion_patterns,
+        ) {
             MenuAction::Suggestion(SuggestionPattern {
                 key,
                 text,
@@ -79,13 +86,18 @@ where
     fn pattern_for_text(
         mut text: S,
         start_location: usize,
+        custom_suggestion_patterns: &HashSet<String>,
     ) -> Option<(PatternKey, String)> {
-        let Some(first_char) = text.pop_first() else {
+        let Some(key) = PatternKey::from_string_and_suggestions(
+            text.to_string(),
+            custom_suggestion_patterns,
+        ) else {
             return None;
         };
-        let Some(key) = PatternKey::from_char(first_char) else {
-            return None;
-        };
+
+        if key.is_static_pattern() {
+            text.pop_first();
+        }
 
         // Exclude slash patterns that are not at the beginning of the document
         // and any selection that contains inner whitespaces.

@@ -113,7 +113,7 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
     }
 
     func replaceTextSuggestion(newText: String, suggestion: SuggestionPattern) -> ComposerUpdate {
-        execute { try $0.replaceTextSuggestion(newText: newText, suggestion: suggestion) }
+        execute { try $0.replaceTextSuggestion(newText: newText, suggestion: suggestion, appendSpace: true) }
     }
 
     func backspace() -> ComposerUpdate {
