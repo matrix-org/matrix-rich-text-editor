@@ -68,8 +68,8 @@ extension ComposerModelWrapper {
     ///   - dom: dom to test
     /// - Returns: self (discardable)
     @discardableResult
-    func assertDom(_ dom: DomNode) -> ComposerModelWrapper {
-        XCTAssertTrue(self.dom.contentEquals(other: dom))
+    func assertDom(_ dom: Dom) -> ComposerModelWrapper {
+        XCTAssertTrue(self.dom.document.contentEquals(other: dom.document))
         return self
     }
 

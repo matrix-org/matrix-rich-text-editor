@@ -16,7 +16,6 @@ pub mod container_node;
 pub mod dom_node;
 pub mod line_break_node;
 pub mod mention_node;
-pub mod node_id;
 pub mod text_node;
 
 pub use container_node::ContainerNode;
@@ -25,5 +24,4 @@ pub use dom_node::DomNode;
 pub use line_break_node::LineBreakNode;
 pub use mention_node::MentionNode;
 pub use mention_node::MentionNodeKind;
-pub use node_id::new_node_id;
 pub use text_node::TextNode;

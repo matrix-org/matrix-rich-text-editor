@@ -24,16 +24,16 @@ protocol ContentEquality {
 extension DomNode: ContentEquality {
     func contentEquals(other: DomNode) -> Bool {
         switch (self, other) {
-        case (.container(id: _, kind: let kind, children: let children),
-              .container(id: _, kind: let kindOther, children: let childrenOther)):
+        case (.container(path: _, kind: let kind, children: let children),
+              .container(path: _, kind: let kindOther, children: let childrenOther)):
             return kind == kindOther && zip(children, childrenOther).allSatisfy { node, other in
                 node.contentEquals(other: other)
             }
-        case (.text(id: _, text: let text), .text(id: _, text: let textOther)):
+        case (.text(path: _, text: let text), .text(path: _, text: let textOther)):
             return text == textOther
-        case (.lineBreak(id: _), .lineBreak(id: _)):
+        case (.lineBreak, .lineBreak):
             return true
-        case (.mention(id: _), .mention(id: _)):
+        case (.mention, .mention):
             return true
         default:
             return false
@@ -50,14 +50,14 @@ extension DomNode: ContentEquality {
     
     func attributedString(for node: DomNode, and string: inout AttributedString, index: Int, attributes: AttributeContainer) -> Int {
         switch node {
-        case .container(id: _, kind: let kind, children: let children):
+        case .container(path: _, kind: let kind, children: let children):
             let combinedAttributes = updateAttributes(for: kind, and: attributes)
             var returnIndex = index
             for child in children {
                 returnIndex = attributedString(for: child, and: &string, index: returnIndex, attributes: combinedAttributes)
             }
             return returnIndex
-        case .text(id: _, text: let text):
+        case .text(path: _, text: let text):
             string.append(AttributedString(text, attributes: attributes))
             return index + text.count
         case .lineBreak:

@@ -15,7 +15,7 @@
 #[derive(Clone, Debug, PartialEq, Hash, Eq, PartialOrd, Ord)]
 pub struct DomHandle {
     // The location of a node in the tree, or None if we don't know yet
-    path: Option<Vec<usize>>,
+    pub path: Option<Vec<usize>>,
 }
 
 impl DomHandle {

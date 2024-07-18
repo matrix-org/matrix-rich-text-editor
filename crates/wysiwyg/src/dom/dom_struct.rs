@@ -35,6 +35,7 @@ where
     document: DomNode<S>,
     #[cfg(any(test, feature = "assert-invariants"))]
     is_transaction_in_progress: bool,
+    pub transaction_id: usize,
 }
 
 impl<S> Dom<S>
@@ -50,6 +51,7 @@ where
             document: DomNode::Container(document),
             #[cfg(any(test, feature = "assert-invariants"))]
             is_transaction_in_progress: false,
+            transaction_id: 0,
         }
     }
 
@@ -68,6 +70,7 @@ where
             document: root_node,
             #[cfg(any(test, feature = "assert-invariants"))]
             is_transaction_in_progress: false,
+            transaction_id: 0,
         }
     }
 
@@ -156,6 +159,7 @@ where
         if !self.is_transaction_in_progress() {
             panic!("Cannot end transaction as no transaction is in progress");
         }
+        self.transaction_id = self.transaction_id + 1;
         self.is_transaction_in_progress = false;
         self.assert_invariants();
     }

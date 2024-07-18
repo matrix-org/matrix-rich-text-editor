@@ -20,6 +20,14 @@ import XCTest
 
 extension WysiwygComposerTests {
     func testDom() throws {
+        let resultDom = Dom(document:
+            DomNode.container(path: [], kind: .generic, children: [
+                .text(path: [], text: "This is "),
+                .container(path: [], kind: .formatting(.bold), children: [.text(path: [], text: "bold")]),
+                .text(path: [], text: " text"),
+            ]),
+            transactionId: 0)
+        
         ComposerModelWrapper()
             .action { $0.replaceText(newText: "This is bold text") }
             .action { $0.select(startUtf16Codeunit: 8, endUtf16Codeunit: 12) }
@@ -38,10 +46,6 @@ extension WysiwygComposerTests {
                     XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(.traitBold))
                 }
             }
-            .assertDom(.container(id: 0, kind: .generic, children: [
-                .text(id: 1, text: "This is "),
-                .container(id: 2, kind: .formatting(.bold), children: [.text(id: 3, text: "bold")]),
-                .text(id: 4, text: " text"),
-            ]))
+            .assertDom(resultDom)
     }
 }

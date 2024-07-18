@@ -23,16 +23,13 @@ use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 use std::marker::PhantomData;
 
-use super::new_node_id;
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineBreakNode<S>
 where
     S: UnicodeString,
 {
-    pub id: usize,
+    pub handle: DomHandle,
     _phantom_data: PhantomData<S>,
-    handle: DomHandle,
 }
 
 impl<S> Default for LineBreakNode<S>
@@ -45,7 +42,6 @@ where
     /// append() it to another node.
     fn default() -> Self {
         Self {
-            id: new_node_id(),
             _phantom_data: PhantomData {},
             handle: DomHandle::new_unset(),
         }

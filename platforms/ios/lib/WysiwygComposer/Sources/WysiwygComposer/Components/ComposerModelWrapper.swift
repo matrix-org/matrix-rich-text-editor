@@ -182,7 +182,7 @@ final class ComposerModelWrapper: ComposerModelWrapperProtocol {
         model.reversedActions
     }
     
-    var dom: DomNode {
+    var dom: Dom {
         model.getDom()
     }
 }

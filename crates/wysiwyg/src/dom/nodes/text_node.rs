@@ -25,8 +25,6 @@ use crate::dom::UnicodeString;
 use html_escape;
 use std::ops::Range;
 
-use super::new_node_id;
-
 // categories of character for backspace/delete word
 #[derive(PartialEq, Eq, Debug)]
 pub enum CharType {
@@ -40,9 +38,8 @@ pub struct TextNode<S>
 where
     S: UnicodeString,
 {
-    pub id: usize,
+    pub handle: DomHandle,
     data: S,
-    handle: DomHandle,
 }
 
 impl<S> TextNode<S>
@@ -55,7 +52,6 @@ where
     /// append() it to another node.
     pub fn from(data: S) -> Self {
         Self {
-            id: new_node_id(),
             data,
             handle: DomHandle::new_unset(),
         }

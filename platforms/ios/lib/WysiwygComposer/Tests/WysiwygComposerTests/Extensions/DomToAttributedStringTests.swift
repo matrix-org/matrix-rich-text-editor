@@ -21,30 +21,30 @@ import XCTest
 final class DomToAttributedStringTests: XCTestCase {
     func testSimpleTextCase() throws {
         let dom: DomNode = .container(
-            id: 0,
+            path: [],
             kind: .generic,
             children: [
-                .text(id: 1, text: "foo"),
-                .container(id: 2, kind: .formatting(.bold), children: [.text(id: 3, text: " bold")]),
-                .text(id: 4, text: " bar"),
+                .text(path: [], text: "foo"),
+                .container(path: [], kind: .formatting(.bold), children: [.text(path: [], text: " bold")]),
+                .text(path: [], text: " bar"),
             ]
         )
-        XCTAssertEqual(dom.toAttributedText, AttributedString(stringLiteral: "foo bold bar"))
+        XCTAssertEqual(NSAttributedString(dom.toAttributedText).string, "foo bold bar")
     }
     
     func testFormattedTextAttributes() throws {
         let dom: DomNode = .container(
-            id: 0,
+            path: [],
             kind: .generic,
             children: [
-                .text(id: 1, text: "Some"),
-                .container(id: 2, kind: .formatting(.bold), children: [
-                    .text(id: 3, text: " bold and"),
-                    .container(id: 2, kind: .formatting(.italic), children: [
-                        .text(id: 3, text: " italic"),
+                .text(path: [], text: "Some"),
+                .container(path: [], kind: .formatting(.bold), children: [
+                    .text(path: [], text: " bold and"),
+                    .container(path: [], kind: .formatting(.italic), children: [
+                        .text(path: [], text: " italic"),
                     ]),
                 ]),
-                .text(id: 4, text: " text"),
+                .text(path: [], text: " text"),
             ]
         )
         let attributed = NSAttributedString(dom.toAttributedText)

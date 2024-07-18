@@ -23,8 +23,6 @@ use crate::dom::to_tree::ToTree;
 use crate::dom::unicode_string::{UnicodeStrExt, UnicodeStringExt};
 use crate::dom::UnicodeString;
 
-use super::new_node_id;
-
 pub const AT_ROOM: &str = "@room";
 
 /// Util function to get the display text for an at-room mention
@@ -41,11 +39,10 @@ where
 {
     // `display_text` refers to that passed by the client which may, in some cases, be different
     // from the ruma derived `Mention.display_text`
-    pub id: usize,
+    pub handle: DomHandle,
     display_text: S,
     kind: MentionNodeKind,
     attributes: Vec<(S, S)>,
-    handle: DomHandle,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -76,7 +73,6 @@ where
         ) {
             let kind = MentionNodeKind::MatrixUri { mention };
             Ok(Self {
-                id: new_node_id(),
                 display_text,
                 kind,
                 attributes,
@@ -95,7 +91,6 @@ where
         let handle = DomHandle::new_unset();
 
         Self {
-            id: new_node_id(),
             display_text: S::from(get_at_room_display_text()),
             kind: MentionNodeKind::AtRoom,
             attributes,

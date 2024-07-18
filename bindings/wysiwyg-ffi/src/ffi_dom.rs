@@ -1,29 +1,58 @@
 use widestring::Utf16String;
+use wysiwyg::Dom as InnerDom;
+use wysiwyg::DomHandle;
+use wysiwyg::DomNode as InnerDomNode;
+
+#[derive(uniffi::Record)]
+pub struct Dom {
+    pub document: DomNode,
+    pub transaction_id: u32,
+}
+
+impl Dom {
+    pub fn from(inner: InnerDom<Utf16String>) -> Self {
+        let node =
+            DomNode::from(InnerDomNode::Container(inner.document().clone()));
+        Dom {
+            document: node,
+            transaction_id: u32::try_from(inner.transaction_id).unwrap(),
+        }
+    }
+}
 
 #[derive(uniffi::Enum)]
 pub enum DomNode {
     Container {
-        id: u32,
+        path: Vec<u32>,
         kind: ContainerNodeKind,
         children: Vec<DomNode>,
     },
     Text {
-        id: u32,
+        path: Vec<u32>,
         text: String,
     },
     LineBreak {
-        id: u32,
+        path: Vec<u32>,
     },
     Mention {
-        id: u32,
+        path: Vec<u32>,
     },
+}
+
+fn into_path(dom_handle: DomHandle) -> Vec<u32> {
+    dom_handle
+        .path
+        .unwrap()
+        .into_iter()
+        .map(|x| u32::try_from(x).unwrap())
+        .collect()
 }
 
 impl DomNode {
     pub fn from(inner: wysiwyg::DomNode<Utf16String>) -> Self {
         match inner {
             wysiwyg::DomNode::Container(node) => DomNode::Container {
-                id: u32::try_from(node.id).unwrap(),
+                path: into_path(node.handle()),
                 kind: ContainerNodeKind::from(node.kind().clone()),
                 children: node
                     .children()
@@ -32,14 +61,14 @@ impl DomNode {
                     .collect::<Vec<_>>(),
             },
             wysiwyg::DomNode::Text(node) => DomNode::Text {
-                id: u32::try_from(node.id).unwrap(),
+                path: into_path(node.handle()),
                 text: node.data().to_string(),
             },
             wysiwyg::DomNode::LineBreak(node) => DomNode::LineBreak {
-                id: u32::try_from(node.id).unwrap(),
+                path: into_path(node.handle()),
             },
             wysiwyg::DomNode::Mention(node) => DomNode::LineBreak {
-                id: u32::try_from(node.id).unwrap(),
+                path: into_path(node.handle()),
             },
         }
     }

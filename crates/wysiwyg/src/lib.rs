@@ -40,6 +40,7 @@ pub use crate::dom::nodes::ContainerNode;
 pub use crate::dom::nodes::ContainerNodeKind;
 pub use crate::dom::nodes::DomNode;
 pub use crate::dom::parser::parse;
+pub use crate::dom::Dom;
 pub use crate::dom::DomCreationError;
 pub use crate::dom::DomHandle;
 pub use crate::dom::HtmlParseError;

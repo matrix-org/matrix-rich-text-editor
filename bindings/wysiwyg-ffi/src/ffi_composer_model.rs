@@ -4,14 +4,13 @@ use std::vec;
 
 use crate::ffi_composer_state::ComposerState;
 use crate::ffi_composer_update::ComposerUpdate;
-use crate::ffi_dom::DomNode;
+use crate::ffi_dom::Dom;
 use crate::ffi_dom_creation_error::DomCreationError;
 use crate::ffi_link_actions::LinkAction;
 use crate::ffi_mentions_state::MentionsState;
 use crate::into_ffi::IntoFfi;
 use crate::{ActionState, ComposerAction, SuggestionPattern};
 use widestring::Utf16String;
-use wysiwyg::DomNode as InnerDomNode;
 
 #[derive(Default, uniffi::Object)]
 pub struct ComposerModel {
@@ -376,10 +375,9 @@ impl ComposerModel {
         self.inner.lock().unwrap().get_mentions_state().into()
     }
 
-    pub fn get_dom(self: &Arc<Self>) -> DomNode {
-        DomNode::from(InnerDomNode::Container(
-            self.inner.lock().unwrap().state.dom.document().clone(),
-        ))
+    pub fn get_dom(self: &Arc<Self>) -> Dom {
+        let inner_dom = self.inner.lock().unwrap().state.dom.clone();
+        Dom::from(inner_dom)
     }
 
     /// Force a panic for test purposes
