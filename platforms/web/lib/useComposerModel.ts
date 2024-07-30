@@ -98,15 +98,18 @@ export function useComposerModel(
             } else {
                 contentModel = new_composer_model();
             }
-            if (customSuggestionPatterns) {
-                contentModel.set_custom_suggestion_patterns(
-                    customSuggestionPatterns,
-                );
-            }
             setComposerModel(contentModel);
         },
-        [setComposerModel, editorRef, customSuggestionPatterns],
+        [setComposerModel, editorRef],
     );
+
+    useEffect(() => {
+        if (composerModel && customSuggestionPatterns) {
+            composerModel.set_custom_suggestion_patterns(
+                customSuggestionPatterns,
+            );
+        }
+    }, [composerModel, customSuggestionPatterns]);
 
     useEffect(() => {
         if (editorRef.current) {
