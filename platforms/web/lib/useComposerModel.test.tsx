@@ -118,7 +118,7 @@ describe('useComposerModel', () => {
     });
 
     it("Doesn't double intialize the model if customSuggestionPatterns are set", async () => {
-        let useProps: {
+        const useProps: {
             editorRef: RefObject<HTMLElement | null>;
             initialContent?: string;
             customSuggestionPatterns?: Array<string>;
@@ -133,14 +133,12 @@ describe('useComposerModel', () => {
                 editorRef: RefObject<HTMLElement | null>;
                 initialContent?: string;
                 customSuggestionPatterns?: Array<string>;
-            }) => {
-                let a = useComposerModel(
+            }) =>
+                useComposerModel(
                     props.editorRef,
                     props.initialContent,
                     props.customSuggestionPatterns,
-                );
-                return a;
-            },
+                ),
             { initialProps: useProps },
         );
 
