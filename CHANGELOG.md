@@ -1,5 +1,8 @@
 # Changelog
 
+# [2.37.8] - 2024-07-31
+- [Web] Fix a bug that caused the composer to be reinitialised a second time.
+
 # [2.37.7] - 2024-07-18
 - [Common] Add auto completion for emojis.
 - [Android] Fix issues with new lines by replacing the HTML parser with Jsoup.
