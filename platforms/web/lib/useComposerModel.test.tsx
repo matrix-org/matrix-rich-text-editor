@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { RefObject } from 'react';
+import { act, RefObject } from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 
 import * as mockRustModel from '../generated/wysiwyg';
@@ -115,5 +115,46 @@ describe('useComposerModel', () => {
             mockRustModel.new_composer_model_from_html,
         ).toHaveBeenCalledTimes(1);
         expect(mockRustModel.new_composer_model).toHaveBeenCalledTimes(1);
+    });
+
+    it("Doesn't double intialize the model if customSuggestionPatterns are set", async () => {
+        const useProps: {
+            editorRef: RefObject<HTMLElement | null>;
+            initialContent?: string;
+            customSuggestionPatterns?: Array<string>;
+        } = {
+            editorRef: mockComposerRef,
+            initialContent: '',
+            customSuggestionPatterns: undefined,
+        };
+
+        const { result, rerender } = renderHook(
+            (props: {
+                editorRef: RefObject<HTMLElement | null>;
+                initialContent?: string;
+                customSuggestionPatterns?: Array<string>;
+            }) =>
+                useComposerModel(
+                    props.editorRef,
+                    props.initialContent,
+                    props.customSuggestionPatterns,
+                ),
+            { initialProps: useProps },
+        );
+
+        // wait for the composerModel to be created
+        await waitFor(() => {
+            expect(result.current.composerModel).not.toBeNull();
+        });
+
+        await act(() => {
+            useProps.customSuggestionPatterns = ['test'];
+            rerender(useProps);
+        });
+
+        expect(mockRustModel.new_composer_model).toHaveBeenCalledTimes(1);
+        expect(
+            mockRustModel.new_composer_model_from_html,
+        ).not.toHaveBeenCalled();
     });
 });
