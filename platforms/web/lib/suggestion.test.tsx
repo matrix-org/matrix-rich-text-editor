@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+// eslint-disable-next-line camelcase
 import init, {
     new_composer_model,
     SuggestionPattern,
@@ -106,8 +106,7 @@ describe('suggestionPattern', () => {
         const model = new_composer_model();
         model.replace_text('hello ');
         const update = model.replace_text('@alic');
-
-        let suggestion = update.menu_action().suggestion();
+        const suggestion = update.menu_action().suggestion();
 
         // When
         if (!suggestion) {
