@@ -1879,6 +1879,7 @@ name = "wysiwyg-wasm"
 version = "2.37.8"
 dependencies = [
  "console_error_panic_hook",
+ "html-escape",
  "js-sys",
  "wasm-bindgen",
  "wasm-bindgen-futures",

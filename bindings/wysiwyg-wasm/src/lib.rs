@@ -327,7 +327,7 @@ impl ComposerModel {
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.set_link_with_text(
             Utf16String::from_str(url),
-            Utf16String::from_str(text),
+            Utf16String::from_str(&html_escape::encode_safe(&text)),
             attributes.into_vec(),
         ))
     }
@@ -360,7 +360,7 @@ impl ComposerModel {
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.insert_mention(
             Utf16String::from_str(url),
-            Utf16String::from_str(text),
+            Utf16String::from_str(&html_escape::encode_safe(&text)),
             attributes.into_vec(),
         ))
     }
@@ -389,7 +389,7 @@ impl ComposerModel {
     ) -> ComposerUpdate {
         ComposerUpdate::from(self.inner.insert_mention_at_suggestion(
             Utf16String::from_str(url),
-            Utf16String::from_str(text),
+            Utf16String::from_str(&html_escape::encode_safe(&text)),
             wysiwyg::SuggestionPattern::from(suggestion.clone()),
             attributes.into_vec(),
         ))
