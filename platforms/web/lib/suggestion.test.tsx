@@ -14,13 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-import { SuggestionPattern } from '../generated/wysiwyg';
+import init, {
+    // eslint-disable-next-line camelcase
+    new_composer_model,
+    SuggestionPattern,
+} from '../generated/wysiwyg';
 import { SUGGESTIONS } from './constants';
 import {
     getSuggestionChar,
     getSuggestionType,
     mapSuggestion,
 } from './suggestion';
+
+beforeAll(async () => {
+    await init();
+});
 
 describe('getSuggestionChar', () => {
     it('returns the expected character', () => {
@@ -90,5 +98,32 @@ describe('mapSuggestion', () => {
             type: 'mention',
             text: suggestion.text,
         });
+    });
+});
+
+describe('suggestionPattern', () => {
+    it('Content should be encoded', () => {
+        // Given
+        const model = new_composer_model();
+        model.replace_text('hello ');
+        const update = model.replace_text('@alic');
+        const suggestion = update.menu_action().suggestion();
+
+        // When
+        if (!suggestion) {
+            fail('There should be an suggestion!');
+        }
+
+        model.insert_mention_at_suggestion(
+            'https://matrix.to/#/@alice:matrix.org',
+            ':D</a> a broken mention!',
+            suggestion.suggestion_pattern,
+            new Map(),
+        );
+
+        // Then
+        expect(model.get_content_as_html()).toBe(
+            'hello <a data-mention-type="user" href="https://matrix.to/#/@alice:matrix.org" contenteditable="false">:D&lt;&#x2F;a&gt; a broken mention!</a>\u{a0}',
+        );
     });
 });
