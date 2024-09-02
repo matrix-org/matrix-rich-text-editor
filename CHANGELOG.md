@@ -1,5 +1,8 @@
 # Changelog
 
+# [2.37.9] - 2024-08-28
+- [Rust] Escape text passed to `ComposerModel::set_link_with_text` and `insert_mention*` methods of the WASM bindings.
+
 # [2.37.8] - 2024-07-31
 - [Web] Fix a bug that caused the composer to be reinitialised a second time.
 
