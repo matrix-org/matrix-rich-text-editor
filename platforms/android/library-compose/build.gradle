@@ -62,7 +62,7 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.5.14'
+        kotlinCompilerExtensionVersion '1.5.15'
     }
     packagingOptions {
         resources.excludes += 'META-INF/LICENSE.md'
@@ -80,7 +80,7 @@ dependencies {
     implementation libs.timber
 
     implementation libs.androidx.core
-    implementation platform('org.jetbrains.kotlin:kotlin-bom:2.0.0')
+    implementation platform('org.jetbrains.kotlin:kotlin-bom:2.0.20')
     implementation libs.androidx.lifecycle.runtime
     implementation libs.androidx.activity.compose
     implementation platform(libs.androidx.compose.bom)
