@@ -1,6 +1,6 @@
 # This project has been archived.
 
-# Matrix Rich Text Editor is now actively maintained at [element-hq/synapse](https://github.com/element-hq/matrix-rich-text-editor)
+# Matrix Rich Text Editor is now actively maintained at [element-hq/matrix-rich-text-editor](https://github.com/element-hq/matrix-rich-text-editor)
 
 # Matrix Rich Text Editor
 [![codecov](https://codecov.io/gh/matrix-org/matrix-rich-text-editor/branch/main/graph/badge.svg?token=UFBR3KtPdg)](https://codecov.io/gh/matrix-org/matrix-rich-text-editor)
