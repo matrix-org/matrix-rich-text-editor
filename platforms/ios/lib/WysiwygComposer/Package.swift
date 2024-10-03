@@ -19,7 +19,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/pointfreeco/swift-snapshot-testing",
-            from: "1.17.2"
+            from: "1.17.5"
         ),
         .package(
             url: "https://github.com/Cocoanetics/DTCoreText",
